@@ -1,8 +1,10 @@
-let overrideCabal = drv: f: (drv.override (args: args // {
+let # Copied from <nixpkgs/pkgs/development/haskell-modules/lib.nix> so that -I isn't necessary
+    overrideCabal = drv: f: (drv.override (args: args // {
       mkDerivation = drv: args.mkDerivation (drv // f drv);
     })) // {
       overrideScope = scope: overrideCabal (drv.overrideScope scope) f;
     };
+
     nixpkgs = import ./nixpkgs {config.allowUnfree = true;};
     extendHaskellPackages = haskellPackages: haskellPackages.override {
       overrides = self: super: {
