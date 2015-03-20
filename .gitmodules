@@ -10,3 +10,6 @@
 [submodule "impress.js"]
 	path = impress.js
 	url = git@github.com:ryantrinkle/impress.js
+[submodule "authenticate"]
+	path = authenticate
+	url = git@github.com:ryantrinkle/authenticate
