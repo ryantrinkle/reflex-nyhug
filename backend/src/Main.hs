@@ -1,5 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings, FlexibleContexts, ScopedTypeVariables #-}
 
 module Main where
 
@@ -14,12 +13,15 @@ import Control.Monad.Trans.Resource
 import Data.Aeson
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Conduit as C
 import qualified Data.Conduit.List as CL
 import Data.Default
 import qualified Data.Map as Map
 import Data.Map (Map)
 import qualified Data.Text as T
+import Data.Text (Text)
+import Data.Text.Encoding
 import qualified Data.Text.IO as T
 import Network.HTTP.Conduit
 import System.IO (hFlush, stdout)
@@ -36,6 +38,7 @@ site = (serveDirectory "../static") <|>
              , ("blank", writeBS "")
              , ("twitter/secret", getTwitterSecret)
              , ("twitter/timeline", getTwitterTimeline)
+             , ("twitter/status", postTwitterStatus)
              ]
 
 tokens :: OAuth
@@ -98,3 +101,13 @@ getTwitterTimeline = do
 
 timeline :: TWInfo -> IO [Status]
 timeline twInfo = withManager $ \mgr -> call twInfo mgr homeTimeline
+
+postTwitterStatus :: Snap ()
+postTwitterStatus = do
+  rb <- readRequestBody 10000
+  let x :: ([(BS.ByteString, BS.ByteString)], Text) = read $ T.unpack $ decodeUtf8 $ LBS.toStrict rb
+  s <- liftIO $ withManager $ \mgr -> call (setCredential tokens (Credential $ fst x) def) mgr $ update (snd x)
+  writeLBS $ encode s
+  return ()
+
+
