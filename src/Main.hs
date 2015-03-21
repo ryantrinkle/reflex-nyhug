@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, TemplateHaskell, QuasiQuotes, JavaScriptFFI, CPP, ForeignFunctionInterface #-}
+{-# LANGUAGE ScopedTypeVariables, TemplateHaskell, QuasiQuotes, JavaScriptFFI, CPP, ForeignFunctionInterface, RecursiveDo #-}
 import Prelude hiding (head)
 
 import ReflexTalk.Example
@@ -9,6 +9,7 @@ import Reflex.ImpressJs
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.IO.Class
+import Data.Bitraversable
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
 import Data.Default
@@ -145,9 +146,9 @@ twitter origin = slide Nothing "slide" (def {_x = 3000 }) $ do
     creds <- holdDyn Nothing $ fmap Just c
     dyn =<< mapDyn (maybe blank $ const (icon "check")) creds
     return creds
+  disableUntilAuth <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
   timeline <- el "div" $ do
-    as <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
-    getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" as $ text "Get My Timeline"
+    getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Get My Timeline"
     tlr <- performRequestAsync (fmap (\cred -> XhrRequest "GET" ("twitter/timeline" <> toQueryString cred) def) $ fmapMaybe id $ tagDyn c getTL)
     let tl :: Event t [Status] = fmapMaybe (join . fmap (decode . LBS.fromStrict . encodeUtf8 . T.pack) . respBody) tlr
     statuses <- holdDyn Map.empty $ fmap (Map.fromList . zip [(1::Int)..]) tl
@@ -158,10 +159,23 @@ twitter origin = slide Nothing "slide" (def {_x = 3000 }) $ do
         el "p" $ dynText =<< mapDyn (T.unpack . statusText) s
         elAttr "p" ("style" =: "font-size:50%;") $ dynText =<< mapDyn (show . statusCreatedAt) s
     return ()
+  el "div" $ do
+    rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
+        send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
+        tweet :: Event t (Maybe SimpleQuery, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
+        twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
+
+    return ()
     --dynText =<< holdDyn "" (fmap (maybe "" id . respBody) tl)
   return ()
 
 icon i = elClass "i" ("fa fa-" <> i) $ return ()
+
+biseqFirst :: Monad m => (m a, b) -> m (a, b)
+biseqFirst (a,b) = bisequence (a, return b)
+
+toTweetReq :: SimpleQuery -> String -> XhrRequest
+toTweetReq c s = XhrRequest "POST" "/twitter/status" $ def { _xhrRequestConfig_sendData = Just $ show (c,s) }
 
 respBody :: XhrResponse -> Maybe String
 respBody = fmap fromJSString . _xhrResponse_body
