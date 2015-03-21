@@ -3,23 +3,40 @@
 
 module Main where
 
-import Web.Twitter.Conduit
+import Web.Twitter.Conduit hiding (map)
 import Web.Twitter.Types.Lens
 
+import Control.Applicative
 import Control.Lens
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Control
 import Control.Monad.Trans.Resource
+import Data.Aeson
 import qualified Data.ByteString.Char8 as B8
+import qualified Data.ByteString as BS
 import qualified Data.Conduit as C
 import qualified Data.Conduit.List as CL
 import Data.Default
+import qualified Data.Map as Map
+import Data.Map (Map)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Network.HTTP.Conduit
 import System.IO (hFlush, stdout)
 import Web.Authenticate.OAuth (OAuth(..), Credential(..))
 import qualified Web.Authenticate.OAuth as OA
+
+import Snap.Core
+import Snap.Http.Server
+import Snap.Util.FileServe
+
+site :: Snap ()
+site = (serveDirectory "../static") <|>
+       route [ ("oauth", getOauthUrl)
+             , ("blank", writeBS "")
+             , ("twitter/secret", getTwitterSecret)
+             , ("twitter/timeline", getTwitterTimeline)
+             ]
 
 tokens :: OAuth
 tokens = twitterOAuth
@@ -51,15 +68,28 @@ getTWInfo = do
 
 main :: IO ()
 main = do
-    twInfo <- getTWInfo
-    putStrLn $ "# your home timeline (up to 100 tweets):"
-    withManager $ \mgr -> do
-        sourceWithMaxId twInfo mgr homeTimeline
-            C.$= CL.isolate 100
-            C.$$ CL.mapM_ $ \status -> liftIO $ do
-                T.putStrLn $ T.concat [ T.pack . show $ status ^. statusId
-                                      , ": "
-                                      , status ^. statusUser . userScreenName
-                                      , ": "
-                                      , status ^. statusText
-                                      ]
+  quickHttpServe site
+
+getOauthUrl :: Snap ()
+getOauthUrl = do
+  cred <- liftIO $ withManager $ \mgr -> OA.getTemporaryCredential tokens mgr
+  writeText $ T.pack $ OA.authorizeUrl tokens cred
+
+getTwitterSecret :: Snap ()
+getTwitterSecret = do
+  params <- getQueryParams
+  r <- liftIO $ withManager $ \mgr -> OA.getAccessToken tokens (toCred params) mgr
+  writeText $ T.pack $ show $ unCredential r
+
+toCred :: Map BS.ByteString [BS.ByteString] -> Credential
+toCred ps = Credential $ concatMap (\(a,b) -> map (\c -> (a,c)) b) $ Map.toList ps
+
+getTwitterTimeline :: Snap ()
+getTwitterTimeline = do
+  params <- getQueryParams
+  let cred = setCredential tokens (toCred params) def
+  htl <- liftIO $ timeline cred
+  writeLBS $ encode htl
+
+timeline :: TWInfo -> IO [Status]
+timeline twInfo = withManager $ \mgr -> call twInfo mgr homeTimeline

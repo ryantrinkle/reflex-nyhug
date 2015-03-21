@@ -10,7 +10,8 @@ let this = import ./.;
       twitter-types-lens
       lens
       lens-aeson
-#      authenticate-oauth
+      http-types
+      network-uri
     ]);
 in this.nixpkgs.runCommand "shell" {
   buildCommand = ''

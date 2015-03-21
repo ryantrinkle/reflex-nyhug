@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE ScopedTypeVariables, TemplateHaskell, QuasiQuotes, JavaScriptFFI, CPP, ForeignFunctionInterface #-}
 import Prelude hiding (head)
 
 import ReflexTalk.Example
@@ -6,17 +6,54 @@ import ReflexTalk.Example
 import Reflex
 import Reflex.Dom
 import Reflex.ImpressJs
+import Control.Concurrent
 import Control.Monad
+import Control.Monad.IO.Class
+import Data.ByteString (ByteString)
 import Data.Default
 import Data.Monoid
 import Data.Function
 import Data.Maybe
 import qualified Data.Map as Map
 import Data.Map (Map)
+import GHCJS.Foreign
+import GHCJS.Types
 import Safe
 import Language.Haskell.HsColour.InlineCSS
 import Language.Haskell.HsColour.Colourise
 import Text.RawString.QQ
+import qualified Data.Text as T
+import Data.Text.Encoding
+import Network.URI
+import Network.HTTP.Types.URI
+
+-- Note: The C preprocessor will fail if you use a single-quote in the name
+#ifdef __GHCJS__
+#define JS(name, js, type) foreign import javascript unsafe js name :: type
+#else
+#define JS(name, js, type) name :: type ; name = undefined
+#endif
+
+newtype Window = Window { unWindow :: JSRef Window }
+
+JS(windowOpen_, "[window.open($1, $2, $3, false)]", JSString -> JSString -> JSString -> IO (JSRef Window))
+JS(windowClose_, "$1[0].close()", JSRef Window -> IO ())
+JS(windowLocationHref_, "try { $r = $1[0].location.href } catch (a) { $r = null }", JSRef Window -> IO JSString)
+
+windowOpen :: String -> String -> String -> IO Window
+windowOpen url target specs = do
+  w <- liftIO $ windowOpen_ (toJSString url) (toJSString target) (toJSString specs)
+  return $ Window w
+
+windowLocationHref :: Window -> IO (Maybe String)
+windowLocationHref w = do
+  l <- liftIO $ windowLocationHref_ $ unWindow w
+  if isNull l
+     then return Nothing
+     else return $ Just $ fromJSString l
+
+windowClose :: Window -> IO ()
+windowClose = windowClose_ . unWindow
 
 main :: IO ()
 main = do
@@ -81,4 +118,39 @@ slides =
              display result
           |])
        return ()
+  , twitter
   ]
+
+twitter :: forall t m. MonadWidget t m => m ()
+twitter = slide Nothing "slide" (def {_x = 3000 }) $ do
+  r <- performRequestAsync . fmap (const $ XhrRequest "GET" "/oauth" def) =<< getPostBuild
+  url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
+  l <- link "open"
+  win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url (_link_clicked l))
+  temp <- performEventAsync (fmap (\w cb -> liftIO $ waitForOauth w cb) win)
+  cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
+  let c :: Event t SimpleQuery = fmapMaybe readMay $ fmapMaybe respBody cr
+  timeline <- performRequestAsync $ fmap (\cred -> XhrRequest "GET" ("twitter/timeline" <> toQueryString cred) def) c
+  display =<< holdDyn Nothing (fmap respBody timeline)
+  return ()
+
+respBody :: XhrResponse -> Maybe String
+respBody = fmap fromJSString . _xhrResponse_body
+
+toQueryString :: SimpleQuery -> String
+toQueryString = T.unpack . decodeUtf8 . renderSimpleQuery True
+
+waitForOauth :: Window -> (SimpleQuery -> IO ()) -> IO ()
+waitForOauth w cb = void $ forkIO $ do
+  let go = do
+        l <- windowLocationHref w
+        case l of
+             Just l' | l' /= "about:blank"
+                     , Just uri <- parseURI l'
+                     -> do
+                          windowClose w
+                          cb $ parseSimpleQuery $ encodeUtf8 $ T.pack $ uriQuery uri
+             _ -> do
+               threadDelay 250000
+               go
+  go

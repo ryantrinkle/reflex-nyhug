@@ -14,5 +14,6 @@ executable reflex-talk-backend
   build-depends:       base >=4.6 && <4.7
                      , bytestring >=0.10 && <0.11
                      , twitter-conduit
+                     , snap-server
   hs-source-dirs:      src
   default-language:    Haskell2010
