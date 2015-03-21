@@ -42,6 +42,7 @@ tokens :: OAuth
 tokens = twitterOAuth
     { oauthConsumerKey = "7R6EhcPa9ypCPD3ifqxD9sZYS"
     , oauthConsumerSecret = "McRPjCROcKwS9A4HR3N7ivjZqlZYbPuTQmHFy0ick1oLIvtR9W"
+    , oauthCallback = Just "http://localhost:8000/blank"
     }
 
 authorize :: (MonadBaseControl IO m, MonadResource m)
@@ -72,7 +73,11 @@ main = do
 
 getOauthUrl :: Snap ()
 getOauthUrl = do
-  cred <- liftIO $ withManager $ \mgr -> OA.getTemporaryCredential tokens mgr
+  mcb <- getQueryParam "callback"
+  let tokensWithCallback = case mcb of
+        Nothing -> tokens
+        Just cb -> tokens { oauthCallback = Just cb }
+  cred <- liftIO $ withManager $ \mgr -> OA.getTemporaryCredential tokensWithCallback mgr
   writeText $ T.pack $ OA.authorizeUrl tokens cred
 
 getTwitterSecret :: Snap ()

@@ -34,6 +34,11 @@ import Network.HTTP.Types.URI
 #define JS(name, js, type) name :: type ; name = undefined
 #endif
 
+JS(globalLocationOrigin_, "location.origin", IO JSString)
+
+globalLocationOrigin :: IO String
+globalLocationOrigin = liftM fromJSString globalLocationOrigin_
+
 newtype Window = Window { unWindow :: JSRef Window }
 
 JS(windowOpen_, "[window.open($1, $2, $3, false)]", JSString -> JSString -> JSString -> IO (JSRef Window))
@@ -57,7 +62,8 @@ windowClose = windowClose_ . unWindow
 
 main :: IO ()
 main = do
-  mainWidgetWithHead head body
+  origin <- globalLocationOrigin
+  mainWidgetWithHead head $ body origin
   return ()
 
 head = do
@@ -79,11 +85,11 @@ head = do
 
 ahref u t = elAttr "a" ("href" =: u) $ text t
 
-body = do
+body origin = do
   fallback $ el "p" $ do
     text "Sorry, your browser is not supported. A simplified version of the presentation follows, but to get the full experience, please use a recent version of Chrome, Firefox, or Safari, or contact "
     ahref "mailto:info@obsidian.systems" "info@obsidian.systems"
-  impressDiv slides
+  impressDiv $ slides origin
 
 --TODO: should we have doubleInput, too?
 --TODO: move to reflex-dom
@@ -95,7 +101,8 @@ integerInput = do
 
 --TODO: Tab key should only move between controls on the *current* slide
 
-slides =
+slides :: forall t m. MonadWidget t m => String -> [m ()]
+slides origin =
   [ slide Nothing "slide" (def { _x = 0 }) $ el "q" $ do
        el "h1" $ text "Reflex:"
        el "h2" $ text "Practical Functional Reactive Programming"
@@ -104,7 +111,7 @@ slides =
   , slide Nothing "slide" (def { _x = 1000 }) $ do
        $(example [r|
           do clicked <- button "Click me!"
-             numClicks <- count clicked
+             numClicks :: Dynamic t Integer <- count clicked
              display numClicks
           |])
        return ()
@@ -118,12 +125,12 @@ slides =
              display result
           |])
        return ()
-  , twitter
+  , twitter origin
   ]
 
-twitter :: forall t m. MonadWidget t m => m ()
-twitter = slide Nothing "slide" (def {_x = 3000 }) $ do
-  r <- performRequestAsync . fmap (const $ XhrRequest "GET" "/oauth" def) =<< getPostBuild
+twitter :: forall t m. MonadWidget t m => String -> m ()
+twitter origin = slide Nothing "slide" (def {_x = 3000 }) $ do
+  r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> origin <> "/blank") def) =<< getPostBuild
   url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
   l <- link "open"
   win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url (_link_clicked l))
