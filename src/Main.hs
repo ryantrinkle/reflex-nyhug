@@ -10,6 +10,7 @@ import Control.Concurrent
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as LBS
 import Data.Default
 import Data.Monoid
 import Data.Function
@@ -26,6 +27,8 @@ import qualified Data.Text as T
 import Data.Text.Encoding
 import Network.URI
 import Network.HTTP.Types.URI
+import Data.Aeson
+import Web.Twitter.Types hiding (Event)
 
 -- Note: The C preprocessor will fail if you use a single-quote in the name
 #ifdef __GHCJS__
@@ -76,9 +79,10 @@ head = do
   el "title" $ text "Reflex ImpressJs Example"
   metaNameContent "description" "Reflex ImpressJs Example"
   metaNameContent "author" "Obsidian Systems LLC"
-  stylesheet "http://fonts.googleapis.com/css?family=Alegreya"
-  stylesheet "http://fonts.googleapis.com/css?family=Josefin+Sans:300,400"
-  stylesheet "http://fonts.googleapis.com/css?family=Karma:400,300"
+  stylesheet "//fonts.googleapis.com/css?family=Alegreya"
+  stylesheet "//fonts.googleapis.com/css?family=Josefin+Sans:300,400"
+  stylesheet "//fonts.googleapis.com/css?family=Karma:400,300"
+  stylesheet "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
   stylesheet "css/css.css"
   -- <link rel="shortcut icon" href="favicon.png" />
   -- <link rel="apple-touch-icon" href="apple-touch-icon.png" /> 
@@ -87,7 +91,7 @@ ahref u t = elAttr "a" ("href" =: u) $ text t
 
 body origin = do
   fallback $ el "p" $ do
-    text "Sorry, your browser is not supported. A simplified version of the presentation follows, but to get the full experience, please use a recent version of Chrome, Firefox, or Safari, or contact "
+    text "Sorry, your browser is not supported. A simplified version of the presentation follows. To get the full experience, please use a recent version of Chrome, Firefox, or Safari, or contact "
     ahref "mailto:info@obsidian.systems" "info@obsidian.systems"
   impressDiv $ slides origin
 
@@ -132,14 +136,32 @@ twitter :: forall t m. MonadWidget t m => String -> m ()
 twitter origin = slide Nothing "slide" (def {_x = 3000 }) $ do
   r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> origin <> "/blank") def) =<< getPostBuild
   url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
-  l <- link "open"
-  win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url (_link_clicked l))
-  temp <- performEventAsync (fmap (\w cb -> liftIO $ waitForOauth w cb) win)
-  cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
-  let c :: Event t SimpleQuery = fmapMaybe readMay $ fmapMaybe respBody cr
-  timeline <- performRequestAsync $ fmap (\cred -> XhrRequest "GET" ("twitter/timeline" <> toQueryString cred) def) c
-  display =<< holdDyn Nothing (fmap respBody timeline)
+  c <- el "div" $ do
+    auth <- button "Authorize"
+    win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url auth)
+    temp <- performEventAsync (fmap (\w cb -> liftIO $ waitForOauth w cb) win)
+    cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
+    let c :: Event t SimpleQuery = fmapMaybe readMay $ fmapMaybe respBody cr
+    creds <- holdDyn Nothing $ fmap Just c
+    dyn =<< mapDyn (maybe blank $ const (icon "check")) creds
+    return creds
+  timeline <- el "div" $ do
+    as <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
+    getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" as $ text "Get My Timeline"
+    tlr <- performRequestAsync (fmap (\cred -> XhrRequest "GET" ("twitter/timeline" <> toQueryString cred) def) $ fmapMaybe id $ tagDyn c getTL)
+    let tl :: Event t [Status] = fmapMaybe (join . fmap (decode . LBS.fromStrict . encodeUtf8 . T.pack) . respBody) tlr
+    statuses <- holdDyn Map.empty $ fmap (Map.fromList . zip [(1::Int)..]) tl
+    elClass "ul" "fa-ul" $ list statuses $ \s -> do
+      el "li" $ do
+        elClass "i" "fa-li fa fa-twitter" $ return ()
+        el "strong" $ dynText =<< mapDyn (T.unpack . userName . statusUser) s
+        el "p" $ dynText =<< mapDyn (T.unpack . statusText) s
+        elAttr "p" ("style" =: "font-size:50%;") $ dynText =<< mapDyn (show . statusCreatedAt) s
+    return ()
+    --dynText =<< holdDyn "" (fmap (maybe "" id . respBody) tl)
   return ()
+
+icon i = elClass "i" ("fa fa-" <> i) $ return ()
 
 respBody :: XhrResponse -> Maybe String
 respBody = fmap fromJSString . _xhrResponse_body
