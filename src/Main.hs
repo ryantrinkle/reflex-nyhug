@@ -134,7 +134,7 @@ slides origin =
   ]
 
 twitter :: forall t m. MonadWidget t m => String -> m ()
-twitter origin = slide Nothing "slide" (def {_x = 3000 }) $ do
+twitter origin = slide Nothing "" (def {_x = 3000 }) $ do
   r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> origin <> "/blank") def) =<< getPostBuild
   url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
   c <- el "div" $ do
@@ -144,29 +144,30 @@ twitter origin = slide Nothing "slide" (def {_x = 3000 }) $ do
     cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
     let c :: Event t SimpleQuery = fmapMaybe readMay $ fmapMaybe respBody cr
     creds <- holdDyn Nothing $ fmap Just c
-    dyn =<< mapDyn (maybe blank $ const (icon "check")) creds
+    let loading = fmap (const $ icon "spinner fa-pulse") auth
+        check = fmap (const $ icon "check") (updated creds)
+    dyn =<< holdDyn blank (leftmost [loading, check])
     return creds
   disableUntilAuth <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
-  timeline <- el "div" $ do
-    getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Get My Timeline"
-    tlr <- performRequestAsync (fmap (\cred -> XhrRequest "GET" ("twitter/timeline" <> toQueryString cred) def) $ fmapMaybe id $ tagDyn c getTL)
-    let tl :: Event t [Status] = fmapMaybe (join . fmap (decode . LBS.fromStrict . encodeUtf8 . T.pack) . respBody) tlr
-    statuses <- holdDyn Map.empty $ fmap (Map.fromList . zip [(1::Int)..]) tl
-    elClass "ul" "fa-ul" $ list statuses $ \s -> do
-      el "li" $ do
-        elClass "i" "fa-li fa fa-twitter" $ return ()
-        el "strong" $ dynText =<< mapDyn (T.unpack . userName . statusUser) s
-        el "p" $ dynText =<< mapDyn (T.unpack . statusText) s
-        elAttr "p" ("style" =: "font-size:50%;") $ dynText =<< mapDyn (show . statusCreatedAt) s
-    return ()
-  el "div" $ do
-    rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
-        send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
-        tweet :: Event t (Maybe SimpleQuery, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
-        twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
-
-    return ()
-    --dynText =<< holdDyn "" (fmap (maybe "" id . respBody) tl)
+  rec timeline <- el "div" $ do
+        getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Get My Timeline"
+        tlr <- performRequestAsync (fmap (\cred -> XhrRequest "GET" ("twitter/timeline" <> toQueryString cred) def) $ fmapMaybe id $ tagDyn c $ leftmost [getTL, fmap (const ()) twote])
+        dyn =<< holdDyn blank (leftmost [fmap (const $ icon "spinner fa-pulse") getTL, fmap (const blank) tlr])
+        let tl :: Event t [Status] = fmapMaybe (join . fmap (decode . LBS.fromStrict . encodeUtf8 . T.pack) . respBody) tlr
+        statuses <- holdDyn Map.empty $ fmap (Map.fromList . take 5 . zip [(1::Int)..]) tl
+        elAttr "div" ("style" =: "font-size: 50%; width: 70%;") $ elClass "ul" "fa-ul" $ list statuses $ \s -> do
+          el "li" $ do
+            elClass "i" "fa-li fa fa-twitter" $ return ()
+            el "strong" $ dynText =<< mapDyn (T.unpack . userName . statusUser) s
+            el "p" $ dynText =<< mapDyn (T.unpack . statusText) s
+            elAttr "p" ("style" =: "font-size:50%;") $ dynText =<< mapDyn (show . statusCreatedAt) s
+        return ()
+      twote <- el "div" $ do
+        rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
+            send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
+            tweet :: Event t (Maybe SimpleQuery, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
+            twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
+        return twote
   return ()
 
 icon i = elClass "i" ("fa fa-" <> i) $ return ()
