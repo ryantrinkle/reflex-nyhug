@@ -3,7 +3,7 @@
 module Main where
 
 import Web.Twitter.Conduit hiding (map)
-import Web.Twitter.Types.Lens
+--import Web.Twitter.Types.Lens
 
 import Control.Applicative
 import Control.Lens
@@ -11,18 +11,16 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Control
 import Control.Monad.Trans.Resource
 import Data.Aeson
+import Data.Bifunctor
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Conduit as C
-import qualified Data.Conduit.List as CL
 import Data.Default
 import qualified Data.Map as Map
 import Data.Map (Map)
 import qualified Data.Text as T
 import Data.Text (Text)
 import Data.Text.Encoding
-import qualified Data.Text.IO as T
 import Network.HTTP.Conduit
 import System.IO (hFlush, stdout)
 import Web.Authenticate.OAuth (OAuth(..), Credential(..))
@@ -39,6 +37,7 @@ site = (serveDirectory "../static") <|>
              , ("twitter/secret", getTwitterSecret)
              , ("twitter/timeline", getTwitterTimeline)
              , ("twitter/status", postTwitterStatus)
+             , ("twitter/search", getSearchResults)
              ]
 
 tokens :: OAuth
@@ -85,8 +84,8 @@ getOauthUrl = do
 
 getTwitterSecret :: Snap ()
 getTwitterSecret = do
-  params <- getQueryParams
-  r <- liftIO $ withManager $ \mgr -> OA.getAccessToken tokens (toCred params) mgr
+  ps <- getQueryParams
+  r <- liftIO $ withManager $ \mgr -> OA.getAccessToken tokens (toCred ps) mgr
   writeText $ T.pack $ show $ unCredential r
 
 toCred :: Map BS.ByteString [BS.ByteString] -> Credential
@@ -94,20 +93,27 @@ toCred ps = Credential $ concatMap (\(a,b) -> map (\c -> (a,c)) b) $ Map.toList 
 
 getTwitterTimeline :: Snap ()
 getTwitterTimeline = do
-  params <- getQueryParams
-  let cred = setCredential tokens (toCred params) def
-  htl <- liftIO $ timeline cred
+  ps <- getQueryParams
+  htl <- liftIO $ makeCall (toCred ps) $ homeTimeline & count ?~ 25
   writeLBS $ encode htl
-
-timeline :: TWInfo -> IO [Status]
-timeline twInfo = withManager $ \mgr -> call twInfo mgr homeTimeline
 
 postTwitterStatus :: Snap ()
 postTwitterStatus = do
   rb <- readRequestBody 10000
-  let x :: ([(BS.ByteString, BS.ByteString)], Text) = read $ T.unpack $ decodeUtf8 $ LBS.toStrict rb
-  s <- liftIO $ withManager $ \mgr -> call (setCredential tokens (Credential $ fst x) def) mgr $ update (snd x)
+  let (cred, tweet) :: (Credential, Text) = first Credential $ readLBS rb
+  s <- liftIO $ makeCall cred $ update tweet
   writeLBS $ encode s
   return ()
 
+getSearchResults :: Snap ()
+getSearchResults = do
+  rb <- readRequestBody 10000
+  let (cred, query) :: (Credential, Text) = first Credential $ readLBS rb
+  s <- liftIO $ makeCall cred $ searchTweets query & count ?~ 25
+  writeLBS $ encode s
 
+makeCall :: forall m a apiName. (MonadIO m, MonadBaseControl IO m, MonadThrow m, FromJSON a) => Credential -> APIRequest apiName a -> m a
+makeCall cred apiCall = withManager $ \mgr -> call (setCredential tokens cred def) mgr apiCall
+
+readLBS :: Read a => LBS.ByteString -> a
+readLBS = read . T.unpack . decodeUtf8 . LBS.toStrict
