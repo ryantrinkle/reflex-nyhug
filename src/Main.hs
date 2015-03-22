@@ -180,7 +180,7 @@ twitter origin = slide Nothing "slide" (def {_x = 4 * slideWidth }) $ do
         dyn =<< holdDyn blank (leftmost [fmap (const $ icon "spinner fa-pulse") getTL, fmap (const blank) tlr])
         let tl :: Event t [Status] = fmapMaybe (join . fmap (decode . LBS.fromStrict . encodeUtf8 . T.pack) . respBody) tlr
         statuses <- holdDyn Map.empty $ fmap (Map.fromList . take 5 . zip [(1::Int)..]) tl
-        elAttr "div" ("style" =: "font-size: 50%; width: 70%;") $ elClass "ul" "fa-ul" $ list statuses $ \s -> do
+        elAttr "div" ("style" =: "font-size: 50%; width: 70%; line-height: 1.5;") $ elClass "ul" "fa-ul" $ list statuses $ \s -> do
           el "li" $ do
             elClass "i" "fa-li fa fa-twitter" $ return ()
             el "strong" $ dynText =<< mapDyn (T.unpack . userName . statusUser) s
