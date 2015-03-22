@@ -115,20 +115,23 @@ buttonWithIcon i t = do
     text $ " " <> t
   return $ _el_clicked e
 
+slideWidth :: Int
+slideWidth = 2000
+
 slides :: forall t m. MonadWidget t m => String -> m ()
 slides origin = do
-  slide Nothing "slide" (def { _x = 0 }) $ el "q" $ do
+  slide Nothing "" (def { _x = 0 * slideWidth }) $ el "q" $ do
      el "h1" $ text "Reflex:"
      el "h2" $ text "Practical Functional Reactive Programming"
      el "h3" $ text "Ryan Trinkle"
      el "h4" $ text "Obsidian.Systems" --TODO: Use the words reflex and obsidian more
-  slide Nothing "slide" (def { _x = 1000 }) $ do
+  slide Nothing "slide" (def { _x = 1 * slideWidth }) $ do
      $(example [r|
         do tweetBox <- textArea def
            display $ value tweetBox
         |])
      return ()
-  slide Nothing "slide" (def { _x = 2000 }) $ do
+  slide Nothing "slide" (def { _x = 2 * slideWidth }) $ do
      $(example [r|
         do tweetBox <- el "div" $ textArea $
              def & attributes .~ constDyn ("maxlength" =: "140")
@@ -138,7 +141,7 @@ slides origin = do
              text " characters"
         |])
      return ()
-  slide Nothing "slide" (def { _x = 3000 }) $ do
+  slide Nothing "slide" (def { _x = 3 * slideWidth }) $ do
      do newTweet <- el "div" $ do
           rec tweetBox <- textArea $
                 def & attributes .~ constDyn ("maxlength" =: "140")
@@ -156,7 +159,7 @@ slides origin = do
   twitter origin
 
 twitter :: forall t m. MonadWidget t m => String -> m ()
-twitter origin = slide Nothing "slide" (def {_x = 4000 }) $ do
+twitter origin = slide Nothing "slide" (def {_x = 4 * slideWidth }) $ do
   r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> origin <> "/blank") def) =<< getPostBuild
   url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
   c <- el "div" $ do

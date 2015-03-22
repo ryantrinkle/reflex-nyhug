@@ -48,7 +48,7 @@ slide :: MonadWidget t m => Maybe String -> String -> SlideConfig -> m a -> m a
 slide sid klass config content = elAttr "div" (maybe Map.empty ("id" =:) sid <> "class" =: ("step " <> klass) <> slideConfigToAttrs config) content
  
 impressDiv :: MonadWidget t m => m () -> m ()
-impressDiv slides = elAttr "div" ("id" =: "impress") $ do
+impressDiv slides = elAttr "div" ("id" =: "impress" <> "data-width" =: "2048" <> "data-height" =: "1536") $ do
   slides
   post <- getPostBuild
   performEvent_ $ fmap (const $ liftIO impressInit_) post
