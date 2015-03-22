@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, TemplateHaskell, QuasiQuotes, JavaScriptFFI, CPP, ForeignFunctionInterface #-}
+{-# LANGUAGE ScopedTypeVariables, TemplateHaskell, QuasiQuotes, JavaScriptFFI, CPP, ForeignFunctionInterface, RecursiveDo #-}
 import Prelude hiding (head)
 
 import ReflexTalk.Example
@@ -11,6 +11,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
+import Data.Char
 import Data.Default
 import Data.Monoid
 import Data.Function
@@ -27,8 +28,9 @@ import qualified Data.Text as T
 import Data.Text.Encoding
 import Network.URI
 import Network.HTTP.Types.URI
-import Data.Aeson
+import Data.Aeson (decode)
 import Web.Twitter.Types hiding (Event)
+import Control.Lens hiding ((&))
 
 -- Note: The C preprocessor will fail if you use a single-quote in the name
 #ifdef __GHCJS__
@@ -105,35 +107,55 @@ integerInput = do
 
 --TODO: Tab key should only move between controls on the *current* slide
 
-slides :: forall t m. MonadWidget t m => String -> [m ()]
-slides origin =
-  [ slide Nothing "slide" (def { _x = 0 }) $ el "q" $ do
-       el "h1" $ text "Reflex:"
-       el "h2" $ text "Practical Functional Reactive Programming"
-       el "h3" $ text "Ryan Trinkle"
-       el "h4" $ text "Obsidian.Systems" --TODO: Use the words reflex and obsidian more
-  , slide Nothing "slide" (def { _x = 1000 }) $ do
-       $(example [r|
-          do clicked <- button "Click me!"
-             numClicks :: Dynamic t Integer <- count clicked
-             display numClicks
-          |])
-       return ()
-  , slide Nothing "slide" (def { _x = 2000 }) $ do
-       $(example [r|
-          do x <- integerInput
-             text "*"
-             y <- integerInput
-             text "="
-             result <- combineDyn (*) x y
-             display result
-          |])
-       return ()
-  , twitter origin
-  ]
+buttonWithIcon :: MonadWidget t m => String -> String -> m (Event t ())
+buttonWithIcon i t = do
+  (e, _) <- el' "button" $ do
+    icon i
+    text $ " " <> t
+  return $ _el_clicked e
+
+slides :: forall t m. MonadWidget t m => String -> m ()
+slides origin = do
+  slide Nothing "slide" (def { _x = 0 }) $ el "q" $ do
+     el "h1" $ text "Reflex:"
+     el "h2" $ text "Practical Functional Reactive Programming"
+     el "h3" $ text "Ryan Trinkle"
+     el "h4" $ text "Obsidian.Systems" --TODO: Use the words reflex and obsidian more
+  slide Nothing "slide" (def { _x = 1000 }) $ do
+     $(example [r|
+        do tweetBox <- textArea def
+           display $ value tweetBox
+        |])
+     return ()
+  slide Nothing "slide" (def { _x = 2000 }) $ do
+     $(example [r|
+        do tweetBox <- el "div" $ textArea $
+             def & attributes .~ constDyn ("maxlength" =: "140")
+           el "div" $ do
+             numChars <- mapDyn length $ value tweetBox
+             display numChars
+             text " characters"
+        |])
+     return ()
+  slide Nothing "slide" (def { _x = 3000 }) $ do
+     do newTweet <- el "div" $ do
+          rec tweetBox <- textArea $
+                def & attributes .~ constDyn ("maxlength" =: "140")
+                    & textAreaConfig_setValue .~ fmap (const "") tweetButton
+              tweetButton <- buttonWithIcon "twitter" "Tweet!"
+          el "div" $ do
+            numChars <- mapDyn length $ value tweetBox
+            display numChars
+            text " characters"
+          return $ tag (current (value tweetBox)) tweetButton
+        el "div" $ do
+          latestStatus <- foldDyn (:) [] newTweet
+          display latestStatus
+     return ()
+  twitter origin
 
 twitter :: forall t m. MonadWidget t m => String -> m ()
-twitter origin = slide Nothing "slide" (def {_x = 3000 }) $ do
+twitter origin = slide Nothing "slide" (def {_x = 4000 }) $ do
   r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> origin <> "/blank") def) =<< getPostBuild
   url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
   c <- el "div" $ do
