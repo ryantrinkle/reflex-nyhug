@@ -32,6 +32,9 @@ import Network.HTTP.Types.URI
 import Data.Aeson (decode)
 import Web.Twitter.Types hiding (Event)
 import Control.Lens hiding ((&))
+import GHCJS.DOM.XMLHttpRequest
+import WebSocket
+
 
 -- Note: The C preprocessor will fail if you use a single-quote in the name
 #ifdef __GHCJS__
@@ -174,26 +177,44 @@ twitter origin = slide Nothing "slide" (def {_x = 4 * slideWidth }) $ do
     dyn =<< holdDyn blank (leftmost [loading, check])
     return creds
   disableUntilAuth <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
-  rec timeline <- el "div" $ do
-        getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Get My Timeline"
-        tlr <- performRequestAsync (fmap (\cred -> XhrRequest "GET" ("twitter/timeline" <> toQueryString cred) def) $ fmapMaybe id $ tagDyn c $ leftmost [getTL, fmap (const ()) twote])
-        dyn =<< holdDyn blank (leftmost [fmap (const $ icon "spinner fa-pulse") getTL, fmap (const blank) tlr])
-        let tl :: Event t [Status] = fmapMaybe (join . fmap (decode . LBS.fromStrict . encodeUtf8 . T.pack) . respBody) tlr
-        statuses <- holdDyn Map.empty $ fmap (Map.fromList . take 5 . zip [(1::Int)..]) tl
-        elAttr "div" ("style" =: "font-size: 50%; width: 70%; line-height: 1.5;") $ elClass "ul" "fa-ul" $ list statuses $ \s -> do
-          el "li" $ do
-            elClass "i" "fa-li fa fa-twitter" $ return ()
-            el "strong" $ dynText =<< mapDyn (T.unpack . userName . statusUser) s
-            el "p" $ dynText =<< mapDyn (T.unpack . statusText) s
-            elAttr "p" ("style" =: "font-size:50%;") $ dynText =<< mapDyn (show . statusCreatedAt) s
-        return ()
-      twote <- el "div" $ do
-        rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
-            send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
-            tweet :: Event t (Maybe SimpleQuery, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
-            twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
-        return twote
+  twote <- el "div" $ do
+    rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
+        send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
+        tweet :: Event t (Maybe SimpleQuery, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
+        twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
+    return twote
+  el "div" $ do
+    s :: Event t StreamingAPI <- startStream $ fmapMaybe id $ updated c
+    tweetList =<< mapDyn (Map.fromList . zip [(1::Int)..]) =<< foldDyn (:) [] (fmapMaybe (\x -> case x of
+                                                                                                  SStatus a -> Just a
+                                                                                                  _ -> Nothing) s)
   return ()
+
+timeline :: forall t m a. MonadWidget t m => Dynamic t (Maybe SimpleQuery) -> Event t a -> Dynamic t (Map String String) -> m ()
+timeline c update active = el "div" $ do
+  getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" active $ text "Get My Timeline"
+  tlr <- performRequestAsync (fmap (\cred -> XhrRequest "GET" ("/twitter/timeline" <> toQueryString cred) def) $ fmapMaybe id $ tagDyn c $ leftmost [getTL, fmap (const ()) update])
+  dyn =<< holdDyn blank (leftmost [fmap (const $ icon "spinner fa-pulse") getTL, fmap (const blank) tlr])
+  let tl :: Event t [Status] = fmapMaybe (join . fmap (decode . LBS.fromStrict . encodeUtf8 . T.pack) . respBody) tlr
+  statuses <- holdDyn Map.empty $ fmap (Map.fromList . take 5 . zip [(1::Int)..]) tl
+  tweetList statuses
+  return ()
+
+tweetList :: (MonadWidget t m, Ord k) => Dynamic t (Map k Status) -> m (Dynamic t (Map k ()))
+tweetList statuses = elAttr "div" ("style" =: "font-size: 50%; width: 70%; line-height: 1.5;") $ elClass "ul" "fa-ul" $ list statuses $ \s -> do
+  el "li" $ do
+    elClass "i" "fa-li fa fa-twitter" $ return ()
+    el "strong" $ dynText =<< mapDyn (T.unpack . userName . statusUser) s
+    el "p" $ dynText =<< mapDyn (T.unpack . statusText) s
+    elAttr "p" ("style" =: "font-size:50%;") $ dynText =<< mapDyn (show . statusCreatedAt) s
+
+startStream :: forall t m. MonadWidget t m => Event t SimpleQuery -> m (Event t StreamingAPI)
+startStream cred = liftM (switch . current) $ widgetHold (return never) (fmap stream cred)
+
+stream :: MonadWidget t m => SimpleQuery -> m (Event t StreamingAPI)
+stream c = do
+  ws <- webSocket $ "/twitter/userStream" <> toQueryString c
+  return $ fmapMaybe id $ fmap (decode . LBS.fromStrict) ws
 
 icon i = elClass "i" ("fa fa-" <> i) $ return ()
 
