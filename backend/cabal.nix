@@ -1,4 +1,4 @@
-{ mkDerivation, bytestring, twitter-conduit, authenticate-oauth, snap-server }:
+{ mkDerivation, bytestring, twitter-conduit, authenticate-oauth, snap-server, websockets, websockets-snap }:
 
 mkDerivation {
   pname = "reflex-talk-backend";
@@ -6,6 +6,6 @@ mkDerivation {
   src = ./.;
   isLibrary = false;
   isExecutable = true;
-  buildDepends = [ bytestring twitter-conduit authenticate-oauth snap-server ];
+  buildDepends = [ bytestring twitter-conduit authenticate-oauth snap-server websockets-snap websockets ];
   license = null;
 }
