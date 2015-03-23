@@ -71,8 +71,8 @@ windowClose = windowClose_ . unWindow
 
 main :: IO ()
 main = do
-  origin <- globalLocationOrigin
-  mainWidgetWithHead head $ body origin
+  rootURL <- globalLocationOrigin
+  mainWidgetWithHead head $ body rootURL
   return ()
 
 head = do
@@ -95,11 +95,11 @@ head = do
 
 ahref u t = elAttr "a" ("href" =: u) $ text t
 
-body origin = do
+body rootURL = do
   fallback $ el "p" $ do
     text "Sorry, your browser is not supported. A simplified version of the presentation follows. To get the full experience, please use a recent version of Chrome, Firefox, or Safari, or contact "
     ahref "mailto:info@obsidian.systems" "info@obsidian.systems"
-  impressDiv $ slides origin
+  impressDiv $ slides rootURL
 
 --TODO: should we have doubleInput, too?
 --TODO: move to reflex-dom
@@ -122,19 +122,27 @@ slideWidth :: Int
 slideWidth = 2000
 
 slides :: forall t m. MonadWidget t m => String -> m ()
-slides origin = do
+slides rootURL = do
+  introSlides
+  twitterSlides rootURL
+  reflexDemoSlides
+  frpRequirementsSlides
+  reflexSemanticsSlides
+
+introSlides :: forall t m. MonadWidget t m => m ()
+introSlides = do
   slide Nothing "" (def { _x = 0 * slideWidth }) $ el "q" $ do
      el "h1" $ text "Reflex:"
      el "h2" $ text "Practical Functional Reactive Programming"
      el "h3" $ text "Ryan Trinkle"
      el "h4" $ text "Obsidian.Systems" --TODO: Use the words reflex and obsidian more --TODO: Use the actual logo
-  slide Nothing "slide" (def { _x = 1 * slideWidth }) $ do
+  slide Nothing "" (def { _x = 1 * slideWidth }) $ do
      $(example [r|
         do tweetBox <- textArea def
            display $ value tweetBox
         |])
      return ()
-  slide Nothing "slide" (def { _x = 2 * slideWidth }) $ do
+  slide Nothing "" (def { _x = 2 * slideWidth }) $ do
      $(example [r|
         do tweetBox <- el "div" $ textArea $
              def & attributes .~ constDyn ("maxlength" =: "140")
@@ -144,7 +152,7 @@ slides origin = do
              text " characters"
         |])
      return ()
-  slide Nothing "slide" (def { _x = 3 * slideWidth }) $ do
+  slide Nothing "" (def { _x = 3 * slideWidth }) $ do
      do newTweet <- el "div" $ do
           rec tweetBox <- textArea $
                 def & attributes .~ constDyn ("maxlength" =: "140")
@@ -159,35 +167,45 @@ slides origin = do
           latestStatus <- foldDyn (:) [] newTweet
           display latestStatus
      return ()
-  twitter origin
-  slide Nothing "slide" (def { _x = 5 * slideWidth }) $ do
+
+reflexDemoSlides :: forall t m. MonadWidget t m => m ()
+reflexDemoSlides = do
+  slide Nothing "" (def { _x = 5 * slideWidth }) $ do
     el "h1" $ text "Some other apps made with Reflex:"
     el "ul" $ do
       el "li" $ text "Reflex-TodoMVC"
       el "li" $ text "Redline"
       el "li" $ text "Telescope"
       el "li" $ text "This presentation!"
-  slide Nothing "slide" (def { _x = 6 * slideWidth }) $ do
+  slide Nothing "" (def { _x = 6 * slideWidth }) $ do
     el "h1" $ text "Reflex-TodoMVC"
-  slide Nothing "slide" (def { _x = 7 * slideWidth }) $ do
+  slide Nothing "" (def { _x = 7 * slideWidth }) $ do
     el "h1" $ text "Redline"
-  slide Nothing "slide" (def { _x = 7 * slideWidth }) $ do
+  slide Nothing "" (def { _x = 8 * slideWidth }) $ do
     el "h1" $ text "Telescope"
-  slide Nothing "slide" (def { _x = 8 * slideWidth }) $ do
+  slide Nothing "" (def { _x = 9 * slideWidth }) $ do
     el "h1" $ text "This presentation!"
-  slide Nothing "slide" (def { _x = 9 * slideWidth }) $ do
+
+frpRequirementsSlides :: forall t m. MonadWidget t m => m ()
+frpRequirementsSlides = do
+  slide Nothing "" (def { _x = 10 * slideWidth }) $ do
     el "h1" $ text "Part 2"
     el "h2" $ text ""
-  slide Nothing "slide" (def { _x = 10 * slideWidth }) $ do
+  slide Nothing "" (def { _x = 11 * slideWidth }) $ do
     el "h1" $ text "To be practical for real-world use, an FRP system must be:"
     el "ul" $ do
       el "li" $ text "Expressive"
       el "li" $ text "Comprehensible"
       el "li" $ text "Efficient"
 
-twitter :: forall t m. MonadWidget t m => String -> m ()
-twitter origin = slide Nothing "slide" (def {_x = 4 * slideWidth }) $ do
-  r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> origin <> "/blank") def) =<< getPostBuild
+reflexSemanticsSlides :: forall t m. MonadWidget t m => m ()
+reflexSemanticsSlides = do
+  slide Nothing "" (def { _x = 12 * slideWidth }) $ do
+    el "h1" $ text ""
+
+twitterSlides :: forall t m. MonadWidget t m => String -> m ()
+twitterSlides rootURL = slide Nothing "" (def {_x = 4 * slideWidth }) $ do
+  r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> rootURL <> "/blank") def) =<< getPostBuild
   url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
   c <- el "div" $ do
     auth <- button "Authorize"
