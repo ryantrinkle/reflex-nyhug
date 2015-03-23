@@ -127,7 +127,7 @@ slides origin = do
      el "h1" $ text "Reflex:"
      el "h2" $ text "Practical Functional Reactive Programming"
      el "h3" $ text "Ryan Trinkle"
-     el "h4" $ text "Obsidian.Systems" --TODO: Use the words reflex and obsidian more
+     el "h4" $ text "Obsidian.Systems" --TODO: Use the words reflex and obsidian more --TODO: Use the actual logo
   slide Nothing "slide" (def { _x = 1 * slideWidth }) $ do
      $(example [r|
         do tweetBox <- textArea def
@@ -154,12 +154,36 @@ slides origin = do
             numChars <- mapDyn length $ value tweetBox
             display numChars
             text " characters"
-          return $ tag (current (value tweetBox)) tweetButton
+          return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
         el "div" $ do
           latestStatus <- foldDyn (:) [] newTweet
           display latestStatus
      return ()
   twitter origin
+  slide Nothing "slide" (def { _x = 5 * slideWidth }) $ do
+    el "h1" $ text "Some other apps made with Reflex:"
+    el "ul" $ do
+      el "li" $ text "Reflex-TodoMVC"
+      el "li" $ text "Redline"
+      el "li" $ text "Telescope"
+      el "li" $ text "This presentation!"
+  slide Nothing "slide" (def { _x = 6 * slideWidth }) $ do
+    el "h1" $ text "Reflex-TodoMVC"
+  slide Nothing "slide" (def { _x = 7 * slideWidth }) $ do
+    el "h1" $ text "Redline"
+  slide Nothing "slide" (def { _x = 7 * slideWidth }) $ do
+    el "h1" $ text "Telescope"
+  slide Nothing "slide" (def { _x = 8 * slideWidth }) $ do
+    el "h1" $ text "This presentation!"
+  slide Nothing "slide" (def { _x = 9 * slideWidth }) $ do
+    el "h1" $ text "Part 2"
+    el "h2" $ text ""
+  slide Nothing "slide" (def { _x = 10 * slideWidth }) $ do
+    el "h1" $ text "To be practical for real-world use, an FRP system must be:"
+    el "ul" $ do
+      el "li" $ text "Expressive"
+      el "li" $ text "Comprehensible"
+      el "li" $ text "Efficient"
 
 twitter :: forall t m. MonadWidget t m => String -> m ()
 twitter origin = slide Nothing "slide" (def {_x = 4 * slideWidth }) $ do
