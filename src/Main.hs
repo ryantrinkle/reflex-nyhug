@@ -144,11 +144,80 @@ slides rootURL = do
 
 introSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 introSlides cfg = do
-  slide Nothing "" (cfg) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "Reflex"
     el "h4" $ text "Practical Functional Reactive Programming"
-  slide Nothing "" (cfg & x +~ slideWidth) $ do
-    el "h2" $ text "Functional Reactive Programming is a way of writing interactive software without side-effects"
+  slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
+    el "h3" $ do
+      el "strong" $ text "Functional Reactive Programming"
+      text " is a way of writing interactive software using only "
+      el "strong" $ text "pure functions"
+  slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
+    el "h3" $ do
+      text "Pure functions make code "
+      el "strong" $ text "referentially transparent,"
+      text " enabling equational and local reasoning"
+  slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
+    el "h3" $ do
+      el "strong" $ text "Equational reasoning"
+      text " means that we can "
+      el "strong" $ text "refactor"
+      text " code safely"
+    el "br" $ return ()
+    el "h3" $ do
+      text "For example, we can "
+      el "strong" $ text "always"
+      text " replace 1+2 with 2+1"
+  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
+    el "h3" $ do
+      el "strong" $ text "Local reasoning"
+      text " means that we can "
+      el "strong" $ text "understand"
+      text " code in isolation"
+    el "br" $ return ()
+    el "h3" $ do
+      text "For example, if f(x) = 2x, we know that f(3) will "
+      el "strong" $ text "always"
+      text " be 6"
+  slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
+    el "h3" $ do
+      el "strong" $ text "Equational"
+      text " and "
+      el "strong" $ text "local"
+      text " reasoning make programs built from pure functions "
+      el "strong" $ text "maintainable"
+      text " and "
+      el "strong" $ text "reusable"
+  slide Nothing "" (cfg & x +~ slideWidth * 6) $ do
+    el "h3" $ do
+      text "This makes Haskell amazing for "
+      el "strong" $ text "batch systems,"
+      text " like compilers and web APIs, which mostly consume input at the beginning and produce output at the end"
+  slide Nothing "" (cfg & x +~ slideWidth * 7) $ do
+    el "h3" $ do
+      text "FRP brings the power of pure functions to "
+      el "strong" $ text "interactive systems,"
+      text " such as web pages and audio synthesizers, which consume input and produce output over time"
+  let reflexStart = 8
+  slide Nothing "" (cfg & x +~ slideWidth * (reflexStart + 0)) $ do
+    el "h3" $ do
+      el "strong" $ text "Reflex"
+      text " is a "
+      el "strong" $ text "semantics"
+      text " for FRP and an "
+      el "strong" $ text "implementation"
+      text " of that semantics"
+  slide Nothing "" (cfg & x +~ slideWidth * (reflexStart + 1)) $ do
+    el "h3" $ do
+      text "Reflex works with "
+      el "strong" $ text "GHC"
+      text " and "
+      el "strong" $ text "GHCJS"
+  slide Nothing "" (cfg & x +~ slideWidth * (reflexStart + 2)) $ do
+    el "h3" $ do
+      text "The flagship Reflex toolkit is "
+      el "strong" $ text "Reflex-DOM"
+      text $ ": a library for building cutting edge web apps"
 
 JS(htmlElementCreateShadowRoot_, "$1.createShadowRoot()", JSRef HTMLElement -> IO HTMLElement)
 
@@ -174,7 +243,15 @@ reflexDemoSlides cfg = do
     elAttr "h1" ("style" =: "font-family:'Coustard',serif;font-weight:900") $ text "Telescope"
   slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
     el "h1" $ text "This presentation!"
-
+    el "ul" $ do
+      el "li" $ text "Reflex-DOM"
+      el "li" $ text "impress.js"
+      el "li" $ text "hscolour"
+      el "li" $ text "Snap Framework"
+      el "li" $ text "websockets-snap"
+      el "li" $ text "twitter-conduit"
+      el "li" $ text "authenticate-oauth"
+ 
 frpRequirementsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 frpRequirementsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
