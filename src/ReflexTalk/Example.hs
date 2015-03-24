@@ -3,7 +3,7 @@ module ReflexTalk.Example where
 
 import Language.Haskell.TH.Syntax
 import Language.Haskell.Meta.Parse
-import Language.Haskell.HsColour.InlineCSS
+import Language.Haskell.HsColour.CSS
 import Language.Haskell.HsColour.Colourise
 import Data.Char
 
@@ -21,8 +21,13 @@ trimLeading s = unlines $ map (drop numToTrim) ls
 
 example :: String -> Q Exp
 example s = [| do
-  elDynHtmlAttr' "div" ("style" =: "font-size:smaller;line-height:normal") $ constDyn coloured
-  el "hr" $ return ()
-  $(strExp s)
+    examplePre s
+    $(strExp s)
   |]
-  where coloured = hscolour defaultColourPrefs False $ trimLeading s
+
+examplePre :: MonadWidget t m => String -> m ()
+examplePre s = 
+  divClass "example" $ do
+    elDynHtmlAttr' "div" ("class" =: "code") $ constDyn coloured
+    el "hr" $ return ()
+  where coloured = hscolour True (trimLeading s)

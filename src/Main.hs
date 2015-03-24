@@ -89,6 +89,8 @@ head = do
   stylesheet "//fonts.googleapis.com/css?family=Josefin+Sans:300,400"
   stylesheet "//fonts.googleapis.com/css?family=Karma:400,300"
   stylesheet "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
+  stylesheet "//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"
+  stylesheet "css/hscolour-default.css"
   stylesheet "css/css.css"
   -- <link rel="shortcut icon" href="favicon.png" />
   -- <link rel="apple-touch-icon" href="apple-touch-icon.png" /> 
@@ -119,7 +121,7 @@ buttonWithIcon i t = do
   return $ _el_clicked e
 
 slideWidth :: Int
-slideWidth = 2000
+slideWidth = 2500
 
 slides :: forall t m. MonadWidget t m => String -> m ()
 slides rootURL = do
@@ -139,7 +141,7 @@ introSlides = do
   slide Nothing "" (def { _x = 1 * slideWidth }) $ do
      $(example [r|
         do tweetBox <- textArea def
-           display $ value tweetBox
+           dynText $ value tweetBox
         |])
      return ()
   slide Nothing "" (def { _x = 2 * slideWidth }) $ do
@@ -243,7 +245,7 @@ timeline c update active = el "div" $ do
   return ()
 
 tweetList :: (MonadWidget t m, Ord k) => Dynamic t (Map k Status) -> m (Dynamic t (Map k ()))
-tweetList statuses = elAttr "div" ("style" =: "font-size: 50%; width: 70%; line-height: 1.5;") $ elClass "ul" "fa-ul" $ list statuses $ \s -> do
+tweetList statuses = elAttr "div" ("style" =: "") $ elClass "ul" "fa-ul" $ list statuses $ \s -> do
   el "li" $ do
     elClass "i" "fa-li fa fa-twitter" $ return ()
     el "strong" $ dynText =<< mapDyn (T.unpack . userName . statusUser) s
