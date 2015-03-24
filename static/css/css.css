@@ -430,3 +430,6 @@ body     { pointer-events: none; }
     display: block;
 }
 
+.hidden-scroll::-webkit-scrollbar {
+    display: none;
+}
