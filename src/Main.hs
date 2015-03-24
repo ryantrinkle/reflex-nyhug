@@ -133,7 +133,7 @@ slides rootURL = do
 
 introSlides :: forall t m. MonadWidget t m => m ()
 introSlides = do
-  slide Nothing "" (def { _x = 0 * slideWidth }) $ el "q" $ do
+  slide Nothing "" (def { _x = 0 * slideWidth }) $ do
      el "h1" $ text "Reflex:"
      el "h2" $ text "Practical Functional Reactive Programming"
      el "h3" $ text "Ryan Trinkle"
@@ -155,6 +155,21 @@ introSlides = do
         |])
      return ()
   slide Nothing "" (def { _x = 3 * slideWidth }) $ do
+     examplePre [r|
+       do newTweet <- el "div" $ do
+            rec tweetBox <- textArea $
+                  def & attributes .~ constDyn ("maxlength" =: "140")
+                      & textAreaConfig_setValue .~ fmap (const "") tweetButton
+                tweetButton <- buttonWithIcon "twitter" "Tweet!"
+            el "div" $ do
+              numChars <- mapDyn length $ value tweetBox
+              display numChars
+              text " characters"
+            return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
+          el "div" $ do
+            latestStatus <- foldDyn (:) [] newTweet
+            el "div" $ display latestStatus
+     |]
      do newTweet <- el "div" $ do
           rec tweetBox <- textArea $
                 def & attributes .~ constDyn ("maxlength" =: "140")

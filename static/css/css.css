@@ -1,7 +1,6 @@
-* {
-  font-size: 125%;
+body {
+  font-size: 64px;
 }
-
 h1 {
   font-size: 400%;
 }
@@ -21,8 +20,9 @@ h4 {
 textarea {
   resize: none;
   height: 192px;
-  width: 900px;
+  width: 1280px;
   float: left;
+  font-size: 44px;
 }
 
 .example hr {
@@ -30,7 +30,19 @@ textarea {
 }
 
 pre {
-  font-size: 90%;
+  font-size: 44px;
+}
+
+div {
+  font-size: 48px;
+  clear: left;
+}
+textarea + button {
+  height: 192px;
+  width: 640px;
+  font-size: 64px;
+  font-weight: lighter;
+  border: 4px solid #bbb;
 }
 
 body {
@@ -54,8 +66,7 @@ body     { pointer-events: none; }
 /* COMMON STEP STYLES */
 
 .step {
-    width: 1800px;
-    padding: 80px;
+    width: 1920px;
 
     -webkit-box-sizing: border-box;
     -moz-box-sizing:    border-box;
