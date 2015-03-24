@@ -1,4 +1,5 @@
 body {
+  font-family: 'Raleway', helvetica, sans-serif;
   font-size: 64px;
 }
 h1 {
@@ -23,6 +24,7 @@ textarea {
   width: 1280px;
   float: left;
   font-size: 44px;
+  font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
 }
 
 .example hr {
@@ -36,6 +38,9 @@ pre {
 div {
   font-size: 48px;
   clear: left;
+}
+button {
+  font-family: 'Raleway', helvetica, sans-serif;
 }
 textarea + button {
   height: 192px;
