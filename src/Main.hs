@@ -6,6 +6,7 @@ import ReflexTalk.Example
 import Reflex
 import Reflex.Dom
 import Reflex.ImpressJs
+import Reflex.TodoMVC
 import Control.Concurrent
 import Control.Monad
 import Control.Monad.IO.Class
@@ -32,6 +33,9 @@ import Network.HTTP.Types.URI
 import Data.Aeson (decode)
 import Web.Twitter.Types hiding (Event)
 import Control.Lens hiding ((&))
+import GHCJS.DOM.HTMLElement
+import GHCJS.DOM.HTMLIFrameElement
+import GHCJS.DOM.Types hiding (Event)
 import GHCJS.DOM.XMLHttpRequest
 import WebSocket
 
@@ -184,6 +188,10 @@ introSlides = do
           display latestStatus
      return ()
 
+JS(htmlElementCreateShadowRoot_, "$1.createShadowRoot()", JSRef HTMLElement -> IO HTMLElement)
+
+htmlElementCreateShadowRoot = htmlElementCreateShadowRoot_ . unHTMLElement
+
 reflexDemoSlides :: forall t m. MonadWidget t m => m ()
 reflexDemoSlides = do
   slide Nothing "" (def { _x = 5 * slideWidth }) $ do
@@ -195,6 +203,14 @@ reflexDemoSlides = do
       el "li" $ text "This presentation!"
   slide Nothing "" (def { _x = 6 * slideWidth }) $ do
     el "h1" $ text "Reflex-TodoMVC"
+    elAttr "div" ("style" =: "width:1920px;height:1200px;") $ do
+      e <- buildEmptyElement "div" ("style" =: "width:960px;height:600px;transform-origin: 0 0 0;transform:scale(2,2);overflow:auto" :: Map String String)
+      eShadowRoot <- liftIO $ htmlElementCreateShadowRoot e
+      subWidget (toNode eShadowRoot) $ do
+        el "head" $ do
+          el "style" $ text "@import \"todomvc/css.css\""
+        el "body" $ do
+          todoMVC
   slide Nothing "" (def { _x = 7 * slideWidth }) $ do
     el "h1" $ text "Redline"
   slide Nothing "" (def { _x = 8 * slideWidth }) $ do
