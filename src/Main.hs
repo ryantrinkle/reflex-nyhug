@@ -101,6 +101,7 @@ body rootURL = do
   fallback $ el "p" $ do
     text "Sorry, your browser is not supported. A simplified version of the presentation follows. To get the full experience, please use a recent version of Chrome, Firefox, or Safari, or contact "
     ahref "mailto:info@obsidian.systems" "info@obsidian.systems"
+  ryanFooter
   impressDiv $ slides rootURL
 
 --TODO: should we have doubleInput, too?
@@ -134,10 +135,8 @@ slides rootURL = do
 introSlides :: forall t m. MonadWidget t m => m ()
 introSlides = do
   slide Nothing "" (def { _x = 0 * slideWidth }) $ do
-     el "h1" $ text "Reflex:"
-     el "h2" $ text "Practical Functional Reactive Programming"
-     el "h3" $ text "Ryan Trinkle"
-     el "h4" $ text "Obsidian.Systems" --TODO: Use the words reflex and obsidian more --TODO: Use the actual logo
+     el "h1" $ text "Reflex"
+     el "h4" $ text "Practical Functional Reactive Programming"
   slide Nothing "" (def { _x = 1 * slideWidth }) $ do
      $(example [r|
         do tweetBox <- textArea def
@@ -303,3 +302,28 @@ waitForOauth w cb = void $ forkIO $ do
                threadDelay 250000
                go
   go
+
+lightenPunctuation :: MonadWidget t m => String -> m ()
+lightenPunctuation s = do
+  let (a,b) = Prelude.span Data.Char.isAlphaNum s
+  el "span" $ text a
+  case b of
+       [] -> return ()
+       (x:xs) -> do
+         elAttr "span" ("class" =: "light") $ text [x]
+         lightenPunctuation xs
+
+logo :: MonadWidget t m => String -> m ()
+logo k = elAttr "span" ("class" =: ("logo " <> k)) $ withPunct "OBSIDIAN" "." "SYSTEMS" 
+
+withPunct :: MonadWidget t m => String -> String -> String -> m ()
+withPunct a p b = do
+  text $ (maybe "" id) $ initMay a
+  elAttr "span" ("class" =: "") $ text $ (maybe "" (:[])) $ lastMay a
+  elAttr "span" ("class" =: "punctuation") $ text p
+  text b
+
+ryanFooter = elAttr "a" ("class" =: "logo logo-bottom" <> "href" =: "mailto:ryan.trinkle@obsidian.systems")  $ do
+  withPunct "RYAN" "." "TRINKLE"
+  withPunct "" "@" ""
+  withPunct "OBSIDIAN" "." "SYSTEMS"
