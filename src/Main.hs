@@ -90,8 +90,9 @@ head = do
   metaNameContent "description" "Reflex ImpressJs Example"
   metaNameContent "author" "Obsidian Systems LLC"
   stylesheet "//fonts.googleapis.com/css?family=Alegreya"
-  stylesheet "//fonts.googleapis.com/css?family=Josefin+Sans:300,400"
-  stylesheet "//fonts.googleapis.com/css?family=Karma:400,300"
+  --stylesheet "//fonts.googleapis.com/css?family=Droid+Serif"
+  stylesheet "//fonts.googleapis.com/css?family=Raleway:400,300"
+  --stylesheet "//fonts.googleapis.com/css?family=Inconsolata:400,700"
   -- Telescope logo font
   elAttr "link" ("href" =: "http://fonts.googleapis.com/css?family=Coustard:900" <> "rel" =: "stylesheet" <> "type" =: "text/css") $ return ()
   stylesheet "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
