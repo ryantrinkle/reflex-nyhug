@@ -35,19 +35,40 @@ pre {
   font-size: 44px;
 }
 
+pre span[title] {
+  cursor: help;
+  border-bottom: 2px solid darkgrey;
+}
+
 div {
   font-size: 48px;
   clear: left;
 }
 button {
   font-family: 'Raleway', helvetica, sans-serif;
+  height: 128px;
+  font-size: 44px;
+  font-weight: lighter;
+  border: 4px solid #bbb;
 }
+
+button[disabled] {
+  color: #ABABAB;
+}
+
 textarea + button {
   height: 192px;
   width: 640px;
   font-size: 64px;
   font-weight: lighter;
   border: 4px solid #bbb;
+}
+
+::selection {
+  background: darkgray;
+}
+::-moz-selection {
+  background: darkgray;
 }
 
 .logo {

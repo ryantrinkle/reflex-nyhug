@@ -216,7 +216,7 @@ introSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * (reflexStart + 2)) $ do
     el "h3" $ do
       text "The flagship Reflex toolkit is "
-      el "strong" $ text "Reflex-DOM"
+      el "strong" $ text "Reflex.Dom"
       text $ ": a library for building cutting edge web apps"
 
 JS(htmlElementCreateShadowRoot_, "$1.createShadowRoot()", JSRef HTMLElement -> IO HTMLElement)
@@ -269,73 +269,171 @@ reflexSemanticsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text ""
 
+reflexTypes = Map.fromList [ ("constDyn", "a -> Dynamic t a")
+                           , ("tag", "Behavior t a -> Event t b -> Event t a")
+                           , ("current", "Dynamic t a -> Behavior t a")
+                           , ("dynText", "Dynamic t String -> m ()")
+                           , ("holdDyn", "a -> Event t a -> Dynamic t a")
+                           , ("textArea", "TextAreaConfig t -> m (TextArea t)")
+                           , ("mapDyn", "(a -> b) -> Dynamic t a -> m (Dynamic t b)")
+                           , ("display", "(Show a) => Dynamic t a -> m ()")
+                           , ("text", "String -> m ()")
+                           , ("fmap", "(Functor f) => (a -> b) -> f a -> f b")
+                           , ("el", "MonadWidget t m => String -> m a -> m a")
+                           , ("ffilter", "(FunctorMaybe f) => (a -> Bool) -> f a -> f a")
+                           , ("foldDyn", "(a -> b -> b) -> b -> Event t a -> m (Dynamic t b)")
+                           ]
+
+-- union is biased toward reflexTypes 
+withReflexTypes = Map.union reflexTypes
+
 twitterSlides :: forall t m. MonadWidget t m => String -> SlideConfig -> m ()
 twitterSlides rootURL cfg = do
+  let twitterSlideTypes = withReflexTypes $ Map.fromList
+        [ ("newTweet", "Event t String")
+        , ("tweetBox", "TextArea t")
+        , ("tweetButton", "Event t ()")
+        , ("latestStatus", "Dynamic t [String]")
+        ]
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
-     $(example [r|
-        do tweetBox <- textArea def
-           dynText $ value tweetBox
-        |])
-     return ()
+    el "h1" $ text "#reflexFRP"
+    el "h2" $ text "Building a Twitter frontend"
   slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
-     $(example [r|
-        do tweetBox <- el "div" $ textArea $
-             def & attributes .~ constDyn ("maxlength" =: "140")
-           el "div" $ do
-             numChars <- mapDyn length $ value tweetBox
-             display numChars
-             text " characters"
-        |])
-     return ()
+    el "h4" $ text "An input and its value"
+    examplePre [r|
+       do tweetBox <- textArea def
+          dynText $ value tweetBox
+      |] twitterSlideTypes
+    do tweetBox <- textArea def
+       dynText $ value tweetBox
+    return ()
   slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
-     examplePre [r|
-       do newTweet <- el "div" $ do
-            rec tweetBox <- textArea $
-                  def & attributes .~ constDyn ("maxlength" =: "140")
-                      & textAreaConfig_setValue .~ fmap (const "") tweetButton
-                tweetButton <- buttonWithIcon "twitter" "Tweet!"
-            el "div" $ do
-              numChars <- mapDyn length $ value tweetBox
-              display numChars
-              text " characters"
-            return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
-          el "div" $ do
-            latestStatus <- foldDyn (:) [] newTweet
-            el "div" $ display latestStatus
-     |]
-     do newTweet <- el "div" $ do
-          rec tweetBox <- textArea $
-                def & attributes .~ constDyn ("maxlength" =: "140")
-                    & textAreaConfig_setValue .~ fmap (const "") tweetButton
-              tweetButton <- buttonWithIcon "twitter" "Tweet!"
+    el "h4" $ text "Adding an attribute"
+    examplePre [r|
+       do tweetBox <- textArea $
+            def & attributes .~ constDyn ("maxlength" =: "140")
+          dynText $ value tweetBox
+      |] twitterSlideTypes
+    do tweetBox <- textArea $
+         def & attributes .~ constDyn ("maxlength" =: "140")
+       dynText $ value tweetBox
+    return ()
+  slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
+    el "h4" $ text "Displaying the length of the input"
+    examplePre [r|
+       do tweetBox <- textArea $
+            def & attributes .~ constDyn ("maxlength" =: "140")
           el "div" $ do
             numChars <- mapDyn length $ value tweetBox
             display numChars
             text " characters"
-          return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
-        el "div" $ do
-          latestStatus <- foldDyn (:) [] newTweet
-          display latestStatus
-     return ()
-  slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
-    r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> rootURL <> "/blank") def) =<< getPostBuild
-    url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
-    c <- el "div" $ do
-      auth <- button "Authorize"
-      win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url auth)
-      temp <- performEventAsync (fmap (\w cb -> liftIO $ waitForOauth w cb) win)
-      cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
-      let c :: Event t SimpleQuery = fmapMaybe readMay $ fmapMaybe respBody cr
-      creds <- holdDyn Nothing $ fmap Just c
-      let loading = fmap (const $ icon "spinner fa-pulse") auth
-          check = fmap (const $ icon "check") (updated creds)
-      dyn =<< holdDyn blank (leftmost [loading, check])
-      return creds
+      |] twitterSlideTypes
+    do tweetBox <- textArea $
+         def & attributes .~ constDyn ("maxlength" =: "140")
+       el "div" $ do
+         numChars <- mapDyn length $ value tweetBox
+         display numChars
+         text " characters"
+    return ()
+  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
+    el "h4" $ text "Showing a value when an event occurs"
+    examplePre [r|
+      do newTweet <- el "div" $ do
+           tweetBox <- textArea $ def & attributes .~ constDyn ("maxlength" =: "140")
+           tweetButton <- buttonWithIcon "twitter" "Tweet!"
+           displayNumChars tweetBox
+           return $ tag (current (value tweetBox)) tweetButton
+         el "div" $ do
+           text "Last status: "
+           dynText =<< holdDyn "" newTweet
+    |] twitterSlideTypes
+    do newTweet <- el "div" $ do
+         tweetBox <- textArea $ def & attributes .~ constDyn ("maxlength" =: "140")
+         tweetButton <- buttonWithIcon "twitter" "Tweet!"
+         displayNumChars tweetBox
+         return $ tag (current (value tweetBox)) tweetButton
+       el "div" $ do
+         text "Last status: "
+         dynText =<< holdDyn "" newTweet
+  slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
+    el "h4" $ text "Clearing the input after tweeting"
+    examplePre [r|
+      do newTweet <- el "div" $ do
+           rec tweetBox <- textArea $
+                 def & attributes .~ constDyn ("maxlength" =: "140")
+                     & textAreaConfig_setValue .~ fmap (const "") tweetButton
+               tweetButton <- buttonWithIcon "twitter" "Tweet!"
+           displayNumChars tweetBox
+           return $ tag (current (value tweetBox)) tweetButton
+         el "div" $ do
+           text "Last status: "
+           dynText =<< holdDyn "" newTweet
+    |] twitterSlideTypes
+    do newTweet <- el "div" $ do
+         rec tweetBox <- textArea $
+               def & attributes .~ constDyn ("maxlength" =: "140")
+                   & textAreaConfig_setValue .~ fmap (const "") tweetButton
+             tweetButton <- buttonWithIcon "twitter" "Tweet!"
+         displayNumChars tweetBox
+         return $ tag (current (value tweetBox)) tweetButton
+       el "div" $ do
+         text "Last status: "
+         dynText =<< holdDyn "" newTweet
+  slide Nothing "" (cfg & x +~ slideWidth * 6) $ do
+    el "h4" $ text "Disallowing empty tweets"
+    examplePre [r|
+      do newTweet <- el "div" $ do
+           rec tweetBox <- textArea $
+                 def & attributes .~ constDyn ("maxlength" =: "140")
+                     & textAreaConfig_setValue .~ fmap (const "") tweetButton
+               tweetButton <- buttonWithIcon "twitter" "Tweet!"
+           displayNumChars tweetBox
+           return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
+         el "div" $ do
+           text "Last status: "
+           dynText =<< holdDyn "" newTweet
+    |] twitterSlideTypes
+    do newTweet <- el "div" $ do
+         rec tweetBox <- textArea $
+               def & attributes .~ constDyn ("maxlength" =: "140")
+                   & textAreaConfig_setValue .~ fmap (const "") tweetButton
+             tweetButton <- buttonWithIcon "twitter" "Tweet!"
+         displayNumChars tweetBox
+         return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
+       el "div" $ do
+         text "Last status: "
+         dynText =<< holdDyn "" newTweet
+  slide Nothing "" (cfg & x +~ slideWidth * 7) $ do
+    el "h4" $ text "Building up a list of tweets"
+    examplePre [r|
+      do newTweet <- el "div" $ do
+           rec tweetBox <- textArea $
+                 def & attributes .~ constDyn ("maxlength" =: "140")
+                     & textAreaConfig_setValue .~ fmap (const "") tweetButton
+               tweetButton <- buttonWithIcon "twitter" "Tweet!"
+           displayNumChars tweetBox
+           return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
+         el "div" $ do
+           latestStatus <- foldDyn (:) [] newTweet
+           display latestStatus
+    |] twitterSlideTypes
+    do newTweet <- el "div" $ do
+         rec tweetBox <- textArea $
+               def & attributes .~ constDyn ("maxlength" =: "140")
+                   & textAreaConfig_setValue .~ fmap (const "") tweetButton
+             tweetButton <- buttonWithIcon "twitter" "Tweet!"
+         displayNumChars tweetBox
+         return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
+       el "div" $ do
+         latestStatus <- foldDyn (:) [] newTweet
+         display latestStatus
+  slide Nothing "" (cfg & x +~ slideWidth * 9) $ do
+    c <- el "div" $ twitterAuthorize rootURL
     disableUntilAuth <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
     twote <- el "div" $ do
       rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
           send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
-          tweet :: Event t (Maybe SimpleQuery, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
+          tweet :: Event t (Maybe Credential, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
           twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
       return twote
     el "div" $ do
@@ -345,7 +443,39 @@ twitterSlides rootURL cfg = do
                                                                                                   _ -> Nothing) s)
   return ()
 
-timeline :: forall t m a. MonadWidget t m => Dynamic t (Maybe SimpleQuery) -> Event t a -> Dynamic t (Map String String) -> m ()
+tweetControl :: MonadWidget t m => m (Event t String)
+tweetControl = el "div" $ do
+  rec tweetBox <- textArea $
+        def & attributes .~ constDyn ("maxlength" =: "140")
+            & textAreaConfig_setValue .~ fmap (const "") tweetButton
+      tweetButton <- buttonWithIcon "twitter" "Tweet!"
+  displayNumChars tweetBox
+  return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
+
+type Credential = SimpleQuery
+
+twitterAuthorize :: forall t m. MonadWidget t m => String -> m (Dynamic t (Maybe Credential))
+twitterAuthorize rootURL = do
+  r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> rootURL <> "/blank") def) =<< getPostBuild
+  url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
+  auth <- buttonWithIcon "key" "Authorize"
+  win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url auth)
+  temp <- performEventAsync (fmap (\w cb -> liftIO $ waitForOauth w cb) win)
+  cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
+  let c :: Event t Credential = fmapMaybe readMay $ fmapMaybe respBody cr
+  creds <- holdDyn Nothing $ fmap Just c
+  let loading = fmap (const $ icon "spinner fa-pulse") auth
+      check = fmap (const $ icon "check") (updated creds)
+  dyn =<< holdDyn blank (leftmost [loading, check])
+  return creds
+
+displayNumChars :: MonadWidget t m => TextArea t -> m ()
+displayNumChars tweetBox = el "div" $ do
+  numChars <- mapDyn length $ value tweetBox
+  display numChars
+  text " characters"
+
+timeline :: forall t m a. MonadWidget t m => Dynamic t (Maybe Credential) -> Event t a -> Dynamic t (Map String String) -> m ()
 timeline c update active = el "div" $ do
   getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" active $ text "Get My Timeline"
   tlr <- performRequestAsync (fmap (\cred -> XhrRequest "GET" ("/twitter/timeline" <> toQueryString cred) def) $ fmapMaybe id $ tagDyn c $ leftmost [getTL, fmap (const ()) update])
@@ -363,10 +493,10 @@ tweetList statuses = elAttr "div" ("style" =: "") $ elClass "ul" "fa-ul" $ list 
     el "p" $ dynText =<< mapDyn (T.unpack . statusText) s
     elAttr "p" ("style" =: "font-size:50%;") $ dynText =<< mapDyn (show . statusCreatedAt) s
 
-startStream :: forall t m. MonadWidget t m => Event t SimpleQuery -> m (Event t StreamingAPI)
+startStream :: forall t m. MonadWidget t m => Event t Credential -> m (Event t StreamingAPI)
 startStream cred = liftM (switch . current) $ widgetHold (return never) (fmap stream cred)
 
-stream :: MonadWidget t m => SimpleQuery -> m (Event t StreamingAPI)
+stream :: MonadWidget t m => Credential -> m (Event t StreamingAPI)
 stream c = do
   ws <- webSocket $ "/twitter/userStream" <> toQueryString c
   return $ fmapMaybe id $ fmap (decode . LBS.fromStrict) ws
@@ -376,16 +506,16 @@ icon i = elClass "i" ("fa fa-" <> i) $ return ()
 biseqFirst :: Monad m => (m a, b) -> m (a, b)
 biseqFirst (a,b) = bisequence (a, return b)
 
-toTweetReq :: SimpleQuery -> String -> XhrRequest
+toTweetReq :: Credential -> String -> XhrRequest
 toTweetReq c s = XhrRequest "POST" "/twitter/status" $ def { _xhrRequestConfig_sendData = Just $ show (c,s) }
 
 respBody :: XhrResponse -> Maybe String
 respBody = fmap fromJSString . _xhrResponse_body
 
-toQueryString :: SimpleQuery -> String
+toQueryString :: Credential -> String
 toQueryString = T.unpack . decodeUtf8 . renderSimpleQuery True
 
-waitForOauth :: Window -> (SimpleQuery -> IO ()) -> IO ()
+waitForOauth :: Window -> (Credential -> IO ()) -> IO ()
 waitForOauth w cb = void $ forkIO $ do
   let go = do
         l <- windowLocationHref w
