@@ -142,6 +142,51 @@ introSlides = do
   slide Nothing "" (def { _x = 0 * slideWidth }) $ do
      el "h1" $ text "Reflex"
      el "h4" $ text "Practical Functional Reactive Programming"
+
+JS(htmlElementCreateShadowRoot_, "$1.createShadowRoot()", JSRef HTMLElement -> IO HTMLElement)
+
+htmlElementCreateShadowRoot = htmlElementCreateShadowRoot_ . unHTMLElement
+
+reflexDemoSlides :: forall t m. MonadWidget t m => m ()
+reflexDemoSlides = do
+  slide Nothing "" (def { _x = 5 * slideWidth }) $ do
+    el "h1" $ text "Made with Reflex"
+  slide Nothing "" (def { _x = 6 * slideWidth }) $ do
+    el "h1" $ text "reflex-todomvc"
+    elAttr "div" ("style" =: "width:1920px;height:1200px;") $ do
+      e <- buildEmptyElement "div" ("class" =: "hidden-scroll" <> "style" =: "width:960px;height:600px;transform-origin: 0 0 0;transform:scale(2,2);overflow:auto" :: Map String String)
+      eShadowRoot <- liftIO $ htmlElementCreateShadowRoot e
+      subWidget (toNode eShadowRoot) $ do
+        el "head" $ do
+          el "style" $ text "@import \"todomvc/css.css\""
+        el "body" $ do
+          todoMVC
+  slide Nothing "" (def { _x = 7 * slideWidth }) $ do
+    el "h1" $ text "Redline" --TODO: Logo
+  slide Nothing "" (def { _x = 8 * slideWidth }) $ do
+    elAttr "h1" ("style" =: "font-family:'Coustard'") $ text "Telescope"
+  slide Nothing "" (def { _x = 9 * slideWidth }) $ do
+    el "h1" $ text "This presentation!"
+
+frpRequirementsSlides :: forall t m. MonadWidget t m => m ()
+frpRequirementsSlides = do
+  slide Nothing "" (def { _x = 10 * slideWidth }) $ do
+    el "h1" $ text "Part 2"
+    el "h2" $ text ""
+  slide Nothing "" (def { _x = 11 * slideWidth }) $ do
+    el "h1" $ text "To be practical for real-world use, an FRP system must be:"
+    el "ul" $ do
+      el "li" $ text "Expressive"
+      el "li" $ text "Comprehensible"
+      el "li" $ text "Efficient"
+
+reflexSemanticsSlides :: forall t m. MonadWidget t m => m ()
+reflexSemanticsSlides = do
+  slide Nothing "" (def { _x = 12 * slideWidth }) $ do
+    el "h1" $ text ""
+
+twitterSlides :: forall t m. MonadWidget t m => String -> m ()
+twitterSlides rootURL = do
   slide Nothing "" (def { _x = 1 * slideWidth }) $ do
      $(example [r|
         do tweetBox <- textArea def
@@ -188,74 +233,30 @@ introSlides = do
           latestStatus <- foldDyn (:) [] newTweet
           display latestStatus
      return ()
-
-JS(htmlElementCreateShadowRoot_, "$1.createShadowRoot()", JSRef HTMLElement -> IO HTMLElement)
-
-htmlElementCreateShadowRoot = htmlElementCreateShadowRoot_ . unHTMLElement
-
-reflexDemoSlides :: forall t m. MonadWidget t m => m ()
-reflexDemoSlides = do
-  slide Nothing "" (def { _x = 5 * slideWidth }) $ do
-    el "h1" $ text "Made with Reflex"
-  slide Nothing "" (def { _x = 6 * slideWidth }) $ do
-    el "h1" $ text "reflex-todomvc"
-    elAttr "div" ("style" =: "width:1920px;height:1200px;") $ do
-      e <- buildEmptyElement "div" ("class" =: "hidden-scroll" <> "style" =: "width:960px;height:600px;transform-origin: 0 0 0;transform:scale(2,2);overflow:auto" :: Map String String)
-      eShadowRoot <- liftIO $ htmlElementCreateShadowRoot e
-      subWidget (toNode eShadowRoot) $ do
-        el "head" $ do
-          el "style" $ text "@import \"todomvc/css.css\""
-        el "body" $ do
-          todoMVC
-  slide Nothing "" (def { _x = 7 * slideWidth }) $ do
-    el "h1" $ text "Redline" --TODO: Logo
-  slide Nothing "" (def { _x = 8 * slideWidth }) $ do
-    elAttr "h1" ("style" =: "font-family:'Coustard'") $ text "Telescope"
-  slide Nothing "" (def { _x = 9 * slideWidth }) $ do
-    el "h1" $ text "This presentation!"
-
-frpRequirementsSlides :: forall t m. MonadWidget t m => m ()
-frpRequirementsSlides = do
-  slide Nothing "" (def { _x = 10 * slideWidth }) $ do
-    el "h1" $ text "Part 2"
-    el "h2" $ text ""
-  slide Nothing "" (def { _x = 11 * slideWidth }) $ do
-    el "h1" $ text "To be practical for real-world use, an FRP system must be:"
-    el "ul" $ do
-      el "li" $ text "Expressive"
-      el "li" $ text "Comprehensible"
-      el "li" $ text "Efficient"
-
-reflexSemanticsSlides :: forall t m. MonadWidget t m => m ()
-reflexSemanticsSlides = do
-  slide Nothing "" (def { _x = 12 * slideWidth }) $ do
-    el "h1" $ text ""
-
-twitterSlides :: forall t m. MonadWidget t m => String -> m ()
-twitterSlides rootURL = slide Nothing "" (def {_x = 4 * slideWidth }) $ do
-  r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> rootURL <> "/blank") def) =<< getPostBuild
-  url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
-  c <- el "div" $ do
-    auth <- button "Authorize"
-    win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url auth)
-    temp <- performEventAsync (fmap (\w cb -> liftIO $ waitForOauth w cb) win)
-    cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
-    let c :: Event t SimpleQuery = fmapMaybe readMay $ fmapMaybe respBody cr
-    creds <- holdDyn Nothing $ fmap Just c
-    let loading = fmap (const $ icon "spinner fa-pulse") auth
-        check = fmap (const $ icon "check") (updated creds)
-    dyn =<< holdDyn blank (leftmost [loading, check])
-    return creds
-  disableUntilAuth <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
-  twote <- el "div" $ do
-    rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
-        send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
-        tweet :: Event t (Maybe SimpleQuery, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
-        twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
-    return twote
-  el "div" $ do
-    s :: Event t StreamingAPI <- startStream $ fmapMaybe id $ updated c
-    tweetList =<< mapDyn (Map.fromList . zip [(1::Int)..]) =<< foldDyn (:) [] (fmapMaybe (\x -> case x of
+  slide Nothing "" (def {_x = 4 * slideWidth }) $ do
+    r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> rootURL <> "/blank") def) =<< getPostBuild
+    url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
+    c <- el "div" $ do
+      auth <- button "Authorize"
+      win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url auth)
+      temp <- performEventAsync (fmap (\w cb -> liftIO $ waitForOauth w cb) win)
+      cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
+      let c :: Event t SimpleQuery = fmapMaybe readMay $ fmapMaybe respBody cr
+      creds <- holdDyn Nothing $ fmap Just c
+      let loading = fmap (const $ icon "spinner fa-pulse") auth
+          check = fmap (const $ icon "check") (updated creds)
+      dyn =<< holdDyn blank (leftmost [loading, check])
+      return creds
+    disableUntilAuth <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
+    twote <- el "div" $ do
+      rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
+          send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
+          tweet :: Event t (Maybe SimpleQuery, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
+          twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
+      return twote
+    el "div" $ do
+      s :: Event t StreamingAPI <- startStream $ fmapMaybe id $ updated c
+      tweetList =<< mapDyn (Map.fromList . zip [(1::Int)..]) =<< foldDyn (:) [] (fmapMaybe (\x -> case x of
                                                                                                   SStatus a -> Just a
                                                                                                   _ -> Nothing) s)
   return ()
