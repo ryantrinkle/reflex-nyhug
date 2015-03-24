@@ -129,29 +129,34 @@ buttonWithIcon i t = do
 slideWidth :: Int
 slideWidth = 2500
 
+slideHeight :: Int
+slideHeight = 1500
+
 slides :: forall t m. MonadWidget t m => String -> m ()
 slides rootURL = do
-  introSlides
-  twitterSlides rootURL
-  reflexDemoSlides
-  frpRequirementsSlides
-  reflexSemanticsSlides
+  introSlides def
+  twitterSlides rootURL $ def & y +~ slideHeight * 1
+  reflexDemoSlides $ def & y +~ slideHeight * 2
+  frpRequirementsSlides $ def & y +~ slideHeight * 3
+  reflexSemanticsSlides $ def & y +~ slideHeight * 4
 
-introSlides :: forall t m. MonadWidget t m => m ()
-introSlides = do
-  slide Nothing "" (def { _x = 0 * slideWidth }) $ do
-     el "h1" $ text "Reflex"
-     el "h4" $ text "Practical Functional Reactive Programming"
+introSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
+introSlides cfg = do
+  slide Nothing "" (cfg) $ do
+    el "h1" $ text "Reflex"
+    el "h4" $ text "Practical Functional Reactive Programming"
+  slide Nothing "" (cfg & x +~ slideWidth) $ do
+    el "h2" $ text "Functional Reactive Programming is a way of writing interactive software without side-effects"
 
 JS(htmlElementCreateShadowRoot_, "$1.createShadowRoot()", JSRef HTMLElement -> IO HTMLElement)
 
 htmlElementCreateShadowRoot = htmlElementCreateShadowRoot_ . unHTMLElement
 
-reflexDemoSlides :: forall t m. MonadWidget t m => m ()
-reflexDemoSlides = do
-  slide Nothing "" (def { _x = 5 * slideWidth }) $ do
+reflexDemoSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
+reflexDemoSlides cfg = do
+  slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "Made with Reflex"
-  slide Nothing "" (def { _x = 6 * slideWidth }) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
     el "h1" $ text "reflex-todomvc"
     elAttr "div" ("style" =: "width:1920px;height:1200px;") $ do
       e <- buildEmptyElement "div" ("class" =: "hidden-scroll" <> "style" =: "width:960px;height:600px;transform-origin: 0 0 0;transform:scale(2,2);overflow:auto" :: Map String String)
@@ -161,39 +166,39 @@ reflexDemoSlides = do
           el "style" $ text "@import \"todomvc/css.css\""
         el "body" $ do
           todoMVC
-  slide Nothing "" (def { _x = 7 * slideWidth }) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
     el "h1" $ text "Redline" --TODO: Logo
-  slide Nothing "" (def { _x = 8 * slideWidth }) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
     elAttr "h1" ("style" =: "font-family:'Coustard'") $ text "Telescope"
-  slide Nothing "" (def { _x = 9 * slideWidth }) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
     el "h1" $ text "This presentation!"
 
-frpRequirementsSlides :: forall t m. MonadWidget t m => m ()
-frpRequirementsSlides = do
-  slide Nothing "" (def { _x = 10 * slideWidth }) $ do
+frpRequirementsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
+frpRequirementsSlides cfg = do
+  slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "Part 2"
     el "h2" $ text ""
-  slide Nothing "" (def { _x = 11 * slideWidth }) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
     el "h1" $ text "To be practical for real-world use, an FRP system must be:"
     el "ul" $ do
       el "li" $ text "Expressive"
       el "li" $ text "Comprehensible"
       el "li" $ text "Efficient"
 
-reflexSemanticsSlides :: forall t m. MonadWidget t m => m ()
-reflexSemanticsSlides = do
-  slide Nothing "" (def { _x = 12 * slideWidth }) $ do
+reflexSemanticsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
+reflexSemanticsSlides cfg = do
+  slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text ""
 
-twitterSlides :: forall t m. MonadWidget t m => String -> m ()
-twitterSlides rootURL = do
-  slide Nothing "" (def { _x = 1 * slideWidth }) $ do
+twitterSlides :: forall t m. MonadWidget t m => String -> SlideConfig -> m ()
+twitterSlides rootURL cfg = do
+  slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
      $(example [r|
         do tweetBox <- textArea def
            dynText $ value tweetBox
         |])
      return ()
-  slide Nothing "" (def { _x = 2 * slideWidth }) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
      $(example [r|
         do tweetBox <- el "div" $ textArea $
              def & attributes .~ constDyn ("maxlength" =: "140")
@@ -203,7 +208,7 @@ twitterSlides rootURL = do
              text " characters"
         |])
      return ()
-  slide Nothing "" (def { _x = 3 * slideWidth }) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
      examplePre [r|
        do newTweet <- el "div" $ do
             rec tweetBox <- textArea $
@@ -233,7 +238,7 @@ twitterSlides rootURL = do
           latestStatus <- foldDyn (:) [] newTweet
           display latestStatus
      return ()
-  slide Nothing "" (def {_x = 4 * slideWidth }) $ do
+  slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
     r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> rootURL <> "/blank") def) =<< getPostBuild
     url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
     c <- el "div" $ do

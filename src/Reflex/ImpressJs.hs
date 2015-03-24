@@ -1,4 +1,4 @@
-{-# LANGUAGE ForeignFunctionInterface, JavaScriptFFI, CPP #-}
+{-# LANGUAGE ForeignFunctionInterface, JavaScriptFFI, CPP, TemplateHaskell #-}
 
 module Reflex.ImpressJs where
 
@@ -11,6 +11,7 @@ import Data.Default
 import Data.Monoid
 import qualified Data.Map as Map
 import Data.Map (Map)
+import Control.Lens
 
 #ifdef __GHCJS__
 #define JS(name, js, type) foreign import javascript unsafe js name :: type
@@ -57,3 +58,4 @@ impressDiv slides = elAttr "div" ("id" =: "impress" <> "data-width" =: "2048" <>
 fallback :: MonadWidget t m => m a -> m a
 fallback c = divClass "fallback-message" c
 
+makeLenses ''SlideConfig
