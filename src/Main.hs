@@ -204,8 +204,8 @@ reflexDemoSlides = do
       el "li" $ text "This presentation!"
   slide Nothing "" (def { _x = 6 * slideWidth }) $ do
     el "h1" $ text "Reflex-TodoMVC"
-    elAttr "div" ("style" =: "width:1600px;height:1200px;") $ do
-      e <- buildEmptyElement "div" ("style" =: "width:800px;height:600px;transform-origin: 0 0 0;transform:scale(2,2);overflow:auto" :: Map String String)
+    elAttr "div" ("style" =: "width:1920px;height:1200px;") $ do
+      e <- buildEmptyElement "div" ("style" =: "width:960px;height:600px;transform-origin: 0 0 0;transform:scale(2,2);overflow:auto" :: Map String String)
       eShadowRoot <- liftIO $ htmlElementCreateShadowRoot e
       subWidget (toNode eShadowRoot) $ do
         el "head" $ do
