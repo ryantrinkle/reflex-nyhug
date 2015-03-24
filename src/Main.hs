@@ -92,7 +92,7 @@ head = do
   stylesheet "//fonts.googleapis.com/css?family=Alegreya"
   --stylesheet "//fonts.googleapis.com/css?family=Droid+Serif"
   stylesheet "//fonts.googleapis.com/css?family=Raleway:400,300"
-  stylesheet "//fonts.googleapis.com/css?family=Inconsolata:400,700"
+  --stylesheet "//fonts.googleapis.com/css?family=Inconsolata:400,700"
   stylesheet "//fonts.googleapis.com/css?family=Coustard" -- Telescope logo font
   stylesheet "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
   stylesheet "//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"
