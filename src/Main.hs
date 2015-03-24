@@ -92,7 +92,8 @@ head = do
   stylesheet "//fonts.googleapis.com/css?family=Alegreya"
   stylesheet "//fonts.googleapis.com/css?family=Josefin+Sans:300,400"
   stylesheet "//fonts.googleapis.com/css?family=Karma:400,300"
-  stylesheet "//fonts.googleapis.com/css?family=Coustard" -- Telescope logo font
+  -- Telescope logo font
+  elAttr "link" ("href" =: "http://fonts.googleapis.com/css?family=Coustard:900" <> "rel" =: "stylesheet" <> "type" =: "text/css") $ return ()
   stylesheet "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
   stylesheet "//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"
   stylesheet "css/hscolour-default.css"
@@ -169,7 +170,7 @@ reflexDemoSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
     el "h1" $ text "Redline" --TODO: Logo
   slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
-    elAttr "h1" ("style" =: "font-family:'Coustard'") $ text "Telescope"
+    elAttr "h1" ("style" =: "font-family:'Coustard',serif;font-weight:900") $ text "Telescope"
   slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
     el "h1" $ text "This presentation!"
 
