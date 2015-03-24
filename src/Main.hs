@@ -92,6 +92,7 @@ head = do
   stylesheet "//fonts.googleapis.com/css?family=Alegreya"
   stylesheet "//fonts.googleapis.com/css?family=Josefin+Sans:300,400"
   stylesheet "//fonts.googleapis.com/css?family=Karma:400,300"
+  stylesheet "//fonts.googleapis.com/css?family=Coustard" -- Telescope logo font
   stylesheet "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
   stylesheet "//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"
   stylesheet "css/hscolour-default.css"
@@ -196,14 +197,9 @@ htmlElementCreateShadowRoot = htmlElementCreateShadowRoot_ . unHTMLElement
 reflexDemoSlides :: forall t m. MonadWidget t m => m ()
 reflexDemoSlides = do
   slide Nothing "" (def { _x = 5 * slideWidth }) $ do
-    el "h1" $ text "Some other apps made with Reflex:"
-    el "ul" $ do
-      el "li" $ text "Reflex-TodoMVC"
-      el "li" $ text "Redline"
-      el "li" $ text "Telescope"
-      el "li" $ text "This presentation!"
+    el "h1" $ text "Made with Reflex"
   slide Nothing "" (def { _x = 6 * slideWidth }) $ do
-    el "h1" $ text "Reflex-TodoMVC"
+    el "h1" $ text "reflex-todomvc"
     elAttr "div" ("style" =: "width:1920px;height:1200px;") $ do
       e <- buildEmptyElement "div" ("class" =: "hidden-scroll" <> "style" =: "width:960px;height:600px;transform-origin: 0 0 0;transform:scale(2,2);overflow:auto" :: Map String String)
       eShadowRoot <- liftIO $ htmlElementCreateShadowRoot e
@@ -213,9 +209,9 @@ reflexDemoSlides = do
         el "body" $ do
           todoMVC
   slide Nothing "" (def { _x = 7 * slideWidth }) $ do
-    el "h1" $ text "Redline"
+    el "h1" $ text "Redline" --TODO: Logo
   slide Nothing "" (def { _x = 8 * slideWidth }) $ do
-    el "h1" $ text "Telescope"
+    elAttr "h1" ("style" =: "font-family:'Coustard'") $ text "Telescope"
   slide Nothing "" (def { _x = 9 * slideWidth }) $ do
     el "h1" $ text "This presentation!"
 
