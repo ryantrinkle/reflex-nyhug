@@ -136,11 +136,15 @@ slideHeight = 1500
 
 slides :: forall t m. MonadWidget t m => String -> m ()
 slides rootURL = do
+  -- Part 1
   introSlides def
   twitterSlides rootURL $ def & y +~ slideHeight * 1
   reflexDemoSlides $ def & y +~ slideHeight * 2
-  frpRequirementsSlides $ def & y +~ slideHeight * 3
-  reflexSemanticsSlides $ def & y +~ slideHeight * 4
+  -- Break
+  breakSlide $ def & y +~ slideHeight * 3
+  -- Part 2
+  frpRequirementsSlides $ def & y +~ slideHeight * 4
+  reflexSemanticsSlides $ def & y +~ slideHeight * 5
 
 introSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 introSlides cfg = do
@@ -167,7 +171,7 @@ introSlides cfg = do
     el "h3" $ do
       text "For example, we can "
       el "strong" $ text "always"
-      text " replace 1+2 with 2+1"
+      text " replace x+x with 2*x"
   slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
     el "h3" $ do
       el "strong" $ text "Local reasoning"
@@ -184,7 +188,7 @@ introSlides cfg = do
       el "strong" $ text "Equational"
       text " and "
       el "strong" $ text "local"
-      text " reasoning make programs built from pure functions "
+      text " reasoning make code "
       el "strong" $ text "maintainable"
       text " and "
       el "strong" $ text "reusable"
@@ -251,23 +255,82 @@ reflexDemoSlides cfg = do
       el "li" $ text "websockets-snap"
       el "li" $ text "twitter-conduit"
       el "li" $ text "authenticate-oauth"
- 
+
+breakSlide :: forall t m. MonadWidget t m => SlideConfig -> m ()
+breakSlide cfg = slide Nothing "" cfg $ do
+  el "h1" $ text "Try it out!"
+  elAttr "pre" ("style" =: "font-size:larger") $ text $ trimLeading [r|
+      git clone https://github.com/ryantrinkle/try-reflex
+      cd try-reflex
+      ./try-reflex
+    |]
+  el "h3" $ text "Warning: takes a very long time to build"
+
 frpRequirementsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 frpRequirementsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
-    el "h1" $ text "Part 2"
-    el "h2" $ text ""
+    el "h3" $ text "Practical systems must be expressive, comprehensible, and efficient"
   slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
-    el "h1" $ text "To be practical for real-world use, an FRP system must be:"
-    el "ul" $ do
-      el "li" $ text "Expressive"
-      el "li" $ text "Comprehensible"
-      el "li" $ text "Efficient"
+    el "h3" $ text "Practical FRP should be able to express dynamic data flows"
+  slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
+    el "h3" $ text "Practical FRP should be able to express different notions of time"
+  slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
+    el "h3" $ text "Practical FRP should be fully deterministic"
+  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
+    el "h3" $ text "Practical FRP should integrate cleanly with the host language"
+  slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
+    el "h3" $ text "Practical FRP should have good asymptotic performance"
+  slide Nothing "" (cfg & x +~ slideWidth * 6) $ do
+    el "h3" $ text "Practical FRP should be fully garbage-collectable"
 
 reflexSemanticsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 reflexSemanticsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
-    el "h1" $ text ""
+    el "h1" $ text "Types"
+    examplePre [r|
+      Event t a
+      
+      Behavior t a
+    |] mempty
+  slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
+    el "h1" $ text "Degenerate"
+    examplePre [r|
+      never :: Event t a
+
+      constant :: a -> Behavior t a
+    |] mempty
+  slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
+    el "h1" $ text "Mapping"
+    examplePre [r|
+      push :: (a -> PushM t (Maybe b)) -> Event t a -> Event t b
+
+      pull :: PullM t a -> Behavior t a
+    |] mempty
+  slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
+    el "h1" $ text "Bulk"
+    examplePre [r|
+      merge :: GCompare k => DMap (WrapArg (Event t) k) -> Event t (DMap k)
+
+      fan :: GCompare k => Event t (DMap k) -> EventSelector t k
+      select :: EventSelector t k -> k a -> Event t a
+    |] mempty
+  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
+    el "h1" $ text "Higher-order"
+    examplePre [r|
+      switch :: Behavior t (Event t a) -> Event t a
+
+      coincidence :: Event t (Event t a) -> Event t a
+    |] mempty
+  slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
+    el "h1" $ text "Monadic"
+    examplePre [r|
+      sample :: MonadSample t m => Behavior t a -> m a
+      instance MonadSample t (PullM t)
+      instance MonadSample t (PushM t)
+
+      hold :: MonadHold t m => a -> Event t a -> m (Behavior t a)
+      instance MonadHold t (PushM t)
+    |] mempty
 
 reflexTypes = Map.fromList [ ("constDyn", "a -> Dynamic t a")
                            , ("tag", "Behavior t a -> Event t b -> Event t a")
@@ -293,7 +356,8 @@ twitterSlides rootURL cfg = do
         [ ("newTweet", "Event t String")
         , ("tweetBox", "TextArea t")
         , ("tweetButton", "Event t ()")
-        , ("latestStatus", "Dynamic t [String]")
+        , ("latestTweet", "Dynamic t String")
+        , ("tweetHistory", "Dynamic t [String]")
         ]
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "#reflexFRP"
@@ -339,94 +403,104 @@ twitterSlides rootURL cfg = do
     el "h4" $ text "Showing a value when an event occurs"
     examplePre [r|
       do newTweet <- el "div" $ do
-           tweetBox <- textArea $ def & attributes .~ constDyn ("maxlength" =: "140")
+           tweetBox <- textArea $
+             def & attributes .~ constDyn ("maxlength" =: "140")
            tweetButton <- buttonWithIcon "twitter" "Tweet!"
            displayNumChars tweetBox
            return $ tag (current (value tweetBox)) tweetButton
          el "div" $ do
+           latestTweet <- holdDyn "" newTweet
            text "Last status: "
-           dynText =<< holdDyn "" newTweet
+           dynText latestTweet
     |] twitterSlideTypes
     do newTweet <- el "div" $ do
-         tweetBox <- textArea $ def & attributes .~ constDyn ("maxlength" =: "140")
+         tweetBox <- textArea $
+           def & attributes .~ constDyn ("maxlength" =: "140")
          tweetButton <- buttonWithIcon "twitter" "Tweet!"
          displayNumChars tweetBox
          return $ tag (current (value tweetBox)) tweetButton
        el "div" $ do
+         latestTweet <- holdDyn "" newTweet
          text "Last status: "
-         dynText =<< holdDyn "" newTweet
+         dynText latestTweet
   slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
     el "h4" $ text "Clearing the input after tweeting"
     examplePre [r|
       do newTweet <- el "div" $ do
            rec tweetBox <- textArea $
                  def & attributes .~ constDyn ("maxlength" =: "140")
-                     & textAreaConfig_setValue .~ fmap (const "") tweetButton
+                     & setValue .~ fmap (\_ -> "") tweetButton
                tweetButton <- buttonWithIcon "twitter" "Tweet!"
            displayNumChars tweetBox
            return $ tag (current (value tweetBox)) tweetButton
          el "div" $ do
+           latestTweet <- holdDyn "" newTweet
            text "Last status: "
-           dynText =<< holdDyn "" newTweet
+           dynText latestTweet
     |] twitterSlideTypes
     do newTweet <- el "div" $ do
          rec tweetBox <- textArea $
                def & attributes .~ constDyn ("maxlength" =: "140")
-                   & textAreaConfig_setValue .~ fmap (const "") tweetButton
+                   & setValue .~ fmap (\_ -> "") tweetButton
              tweetButton <- buttonWithIcon "twitter" "Tweet!"
          displayNumChars tweetBox
          return $ tag (current (value tweetBox)) tweetButton
        el "div" $ do
+         latestTweet <- holdDyn "" newTweet
          text "Last status: "
-         dynText =<< holdDyn "" newTweet
+         dynText latestTweet
   slide Nothing "" (cfg & x +~ slideWidth * 6) $ do
     el "h4" $ text "Disallowing empty tweets"
     examplePre [r|
       do newTweet <- el "div" $ do
            rec tweetBox <- textArea $
                  def & attributes .~ constDyn ("maxlength" =: "140")
-                     & textAreaConfig_setValue .~ fmap (const "") tweetButton
+                     & setValue .~ fmap (\_ -> "") tweetButton
                tweetButton <- buttonWithIcon "twitter" "Tweet!"
            displayNumChars tweetBox
            return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
          el "div" $ do
+           latestTweet <- holdDyn "" newTweet
            text "Last status: "
-           dynText =<< holdDyn "" newTweet
+           dynText latestTweet
     |] twitterSlideTypes
     do newTweet <- el "div" $ do
          rec tweetBox <- textArea $
                def & attributes .~ constDyn ("maxlength" =: "140")
-                   & textAreaConfig_setValue .~ fmap (const "") tweetButton
+                   & setValue .~ fmap (\_ -> "") tweetButton
              tweetButton <- buttonWithIcon "twitter" "Tweet!"
          displayNumChars tweetBox
          return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
        el "div" $ do
+         latestTweet <- holdDyn "" newTweet
          text "Last status: "
-         dynText =<< holdDyn "" newTweet
+         dynText latestTweet
   slide Nothing "" (cfg & x +~ slideWidth * 7) $ do
     el "h4" $ text "Building up a list of tweets"
     examplePre [r|
       do newTweet <- el "div" $ do
            rec tweetBox <- textArea $
                  def & attributes .~ constDyn ("maxlength" =: "140")
-                     & textAreaConfig_setValue .~ fmap (const "") tweetButton
+                     & setValue .~ fmap (\_ -> "") tweetButton
                tweetButton <- buttonWithIcon "twitter" "Tweet!"
            displayNumChars tweetBox
            return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
          el "div" $ do
-           latestStatus <- foldDyn (:) [] newTweet
-           display latestStatus
+           tweetHistory <- foldDyn (:) [] newTweet
+           text "Tweet history: "
+           display tweetHistory
     |] twitterSlideTypes
     do newTweet <- el "div" $ do
          rec tweetBox <- textArea $
                def & attributes .~ constDyn ("maxlength" =: "140")
-                   & textAreaConfig_setValue .~ fmap (const "") tweetButton
+                   & setValue .~ fmap (\_ -> "") tweetButton
              tweetButton <- buttonWithIcon "twitter" "Tweet!"
          displayNumChars tweetBox
          return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
        el "div" $ do
-         latestStatus <- foldDyn (:) [] newTweet
-         display latestStatus
+         tweetHistory <- foldDyn (:) [] newTweet
+         text "Tweet history: "
+         display tweetHistory
   slide Nothing "" (cfg & x +~ slideWidth * 9) $ do
     c <- el "div" $ twitterAuthorize rootURL
     disableUntilAuth <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
@@ -447,7 +521,7 @@ tweetControl :: MonadWidget t m => m (Event t String)
 tweetControl = el "div" $ do
   rec tweetBox <- textArea $
         def & attributes .~ constDyn ("maxlength" =: "140")
-            & textAreaConfig_setValue .~ fmap (const "") tweetButton
+            & setValue .~ fmap (const "") tweetButton
       tweetButton <- buttonWithIcon "twitter" "Tweet!"
   displayNumChars tweetBox
   return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton

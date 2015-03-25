@@ -37,7 +37,6 @@ example' s ts = [| do
   |]
   where ts' = Map.toList ts
 
-
 examplePre :: MonadWidget t m => String -> Map String String -> m ()
 examplePre s types = 
   divClass "example" $ do
