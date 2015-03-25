@@ -283,19 +283,67 @@ breakSlide cfg = slide Nothing "" cfg $ do
 frpRequirementsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 frpRequirementsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
-    el "h3" $ text "Practical systems must be expressive, comprehensible, and efficient"
+    el "h3" $ do
+      text "Practical systems must be "
+      el "strong" $ text "expressive,"
+      text " "
+      el "strong" $ text "comprehensible,"
+      text " and "
+      el "strong" $ text "efficient"
   slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
-    el "h3" $ text "Practical FRP should support dynamic data flow"
+    el "h3" $ do
+      text "Practical FRP should support "
+      el "strong" $ text "dynamic data flow"
   slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
-    el "h3" $ text "Practical FRP should support a variety of concepts of time"
+    el "h3" $ do
+      text "In Reflex.Dom, widgets can be created, laid out, or destroyed "
+      el "strong" $ text "within"
+      text " the FRP semantics"
   slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
-    el "h3" $ text "Practical FRP should be fully deterministic"
+    el "h3" $ do
+      text "Practical FRP should support a "
+      el "strong" $ text "variety of concepts of time"
   slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
-    el "h3" $ text "Practical FRP should use idiomatic Haskell"
+    el "h3" $ do
+      text "Reflex only requires that time is "
+      el "strong" $ text "ordered"
+      text $ '\x2014' : "both continuous and discrete time are possible"
   slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
-    el "h3" $ text "Practical FRP should have good performance"
+    el "h3" $ do
+      text "Practical FRP should be "
+      el "strong" $ text "fully deterministic"
   slide Nothing "" (cfg & x +~ slideWidth * 6) $ do
-    el "h3" $ text "Practical FRP should be fully garbage-collectable"
+    el "h3" $ do
+      text "All Reflex primitives have "
+      el "strong" $ text "well-defined,"
+      text " implementation-independent behavior"
+  slide Nothing "" (cfg & x +~ slideWidth * 7) $ do
+    el "h3" $ do
+      text "Practical FRP should use "
+      el "strong" $ text "idiomatic Haskell"
+  slide Nothing "" (cfg & x +~ slideWidth * 8) $ do
+    el "h3" $ do
+      text "Reflex has 10 primitives; "
+      el "strong" $ text "8 are pure"
+      text " and 2 are monadic"
+  slide Nothing "" (cfg & x +~ slideWidth * 9) $ do
+    el "h3" $ do
+      text "Practical FRP should have "
+      el "strong" $ text "good performance"
+  slide Nothing "" (cfg & x +~ slideWidth * 10) $ do
+    el "h3" $ do
+      text "In Reflex, overall application size has "
+      el "strong" $ text "no"
+      text " impact on event propagation time"
+  slide Nothing "" (cfg & x +~ slideWidth * 11) $ do
+    el "h3" $ do
+      text "Practical FRP should be "
+      el "strong" $ text "fully garbage-collected"
+  slide Nothing "" (cfg & x +~ slideWidth * 12) $ do
+    el "h3" $ do
+      text "Reflex uses automatic memory management for "
+      el "strong" $ text "all"
+      text " datastructures, even external callbacks"
 
 reflexSemanticsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 reflexSemanticsSlides cfg = do
@@ -307,21 +355,21 @@ reflexSemanticsSlides cfg = do
       Behavior t a
     |] mempty
   slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
-    el "h1" $ text "Degenerate"
+    el "h1" $ text "Trivial constructors"
     examplePre [r|
       never :: Event t a
 
       constant :: a -> Behavior t a
     |] mempty
   slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
-    el "h1" $ text "Mapping"
+    el "h1" $ text "Mapping functions"
     examplePre [r|
       push :: (a -> PushM t (Maybe b)) -> Event t a -> Event t b
 
       pull :: PullM t a -> Behavior t a
     |] mempty
   slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
-    el "h1" $ text "Bulk"
+    el "h1" $ text "Event distribution"
     examplePre [r|
       merge :: GCompare k => DMap (WrapArg (Event t) k) -> Event t (DMap k)
 
@@ -329,14 +377,14 @@ reflexSemanticsSlides cfg = do
       select :: EventSelector t k -> k a -> Event t a
     |] mempty
   slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
-    el "h1" $ text "Higher-order"
+    el "h1" $ text "Higher-order combinators"
     examplePre [r|
       switch :: Behavior t (Event t a) -> Event t a
 
       coincidence :: Event t (Event t a) -> Event t a
     |] mempty
   slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
-    el "h1" $ text "Monadic"
+    el "h1" $ text "Time-sensitive"
     examplePre [r|
       sample :: MonadSample t m => Behavior t a -> m a
       instance MonadSample t (PullM t)
@@ -349,7 +397,7 @@ reflexSemanticsSlides cfg = do
 nextStepsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 nextStepsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
-    el "h2" $ text "The Future of Reflex"
+    el "h1" $ text "The Future of Reflex"
   slide Nothing "" (cfg & x +~ slideWidth * 1) $ el "h3" $ do
     text "Reflex is ready for production use "
     el "strong" $ text "today"
