@@ -816,7 +816,7 @@ withPunct a p b = do
   elAttr "span" ("class" =: "punctuation") $ text p
   text b
 
-ryanFooter = elAttr "a" ("class" =: "logo logo-bottom" <> "href" =: "mailto:ryan.trinkle@obsidian.systems")  $ do
+ryanFooter = elAttr "a" ("class" =: "logo logo-bottom" <> "href" =: "mailto:ryan.trinkle@obsidian.systems" <> "style" =: "padding-right:0.5em")  $ do
   withPunct "RYAN" "." "TRINKLE"
   withPunct "" "@" ""
   withPunct "OBSIDIAN" "." "SYSTEMS"
