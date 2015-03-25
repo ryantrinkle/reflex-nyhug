@@ -345,19 +345,47 @@ reflexTypes = Map.fromList [ ("constDyn", "a -> Dynamic t a")
                            , ("el", "MonadWidget t m => String -> m a -> m a")
                            , ("ffilter", "(FunctorMaybe f) => (a -> Bool) -> f a -> f a")
                            , ("foldDyn", "(a -> b -> b) -> b -> Event t a -> m (Dynamic t b)")
+                           , ("forDyn", "Dynamic t a -> (a -> b) -> m (Dynamic t b)")
+                           , ("attachDyn", "Dynamic t a -> Event t b -> Event t (a, b)")
+                           , ("fmapMaybe", "(FunctorMaybe f) => (a -> Maybe b) -> f a -> f a")
+                           , ("performRequestAsync", "Event t XhrRequest -> m (Event t XhrResponse)")
+                           , ("decodeXhrResponse", "(FromJSON a) => XhrResponse -> Maybe a")
+                           , ("simpleList", "Dynamic t [v] -> (Dynamic t v -> m a) -> m (Dynamic t [a])")
+                           , ("updated", "Dynamic t a -> Event t a")
+                           , ("divClass", "String -> m a -> m a")
+                           , ("elClass", "String -> String -> m a -> m a")
                            ]
 
 -- union is biased toward reflexTypes 
 withReflexTypes = Map.union reflexTypes
 
-twitterSlides :: forall t m. MonadWidget t m => String -> SlideConfig -> m ()
+twitterSlides :: forall t m. MonadWidget t m => String -> SlideConfig -> m (Dynamic t (Maybe Credential), Dynamic t [Status])
 twitterSlides rootURL cfg = do
-  let twitterSlideTypes = withReflexTypes $ Map.fromList
+  let twitterAuthorizeButton = twitterAuthorize rootURL
+      twitterSlideTypes = withReflexTypes $ Map.fromList
         [ ("newTweet", "Event t String")
         , ("tweetBox", "TextArea t")
         , ("tweetButton", "Event t ()")
         , ("latestTweet", "Dynamic t String")
         , ("tweetHistory", "Dynamic t [String]")
+        , ("numChars", "Dynamic t Int")
+        , ("length", "[a] -> Int")
+        , ("displayNumChars", "TextArea t -> m ()")
+        , ("twitterAuthorizeButton", "m (Dynamic t (Maybe Credential))")
+        , ("creds", "Dynamic t (Maybe Credential)")
+        , ("tweetBoxAttrs", "Dynamic t (Map String String)")
+        , ("tweetWidget", "Dynamic t (Map String String) -> m (Event t String)")
+        , ("toTweetReq", "Event t (Maybe Credential) -> Event t String -> Event t (Maybe XhrRequest)")
+        , ("tweetReq", "Event t XhrRequest")
+        , ("tweeted", "Event t XhrResponse")
+        , ("newLiveTweet", "Event t (Maybe String)")
+        , ("liveTweetWidget", "Dynamic t (Maybe Credential) -> m (Event t (Maybe String)")
+        , ("tweetStream", "Event t Credential -> m (Event t Status)")
+        , ("buttonWithIcon", "String -> String -> m (Event t ())")
+        , ("tweets", "Dynamic t [Status]")
+        , ("startStream", "Event t Credential -> m (Event t Status)")
+        , ("tweetStatus", "Status -> String")
+        , ("tweetUserName", "Status -> String")
         ]
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "#reflexFRP"
@@ -501,26 +529,133 @@ twitterSlides rootURL cfg = do
          tweetHistory <- foldDyn (:) [] newTweet
          text "Tweet history: "
          display tweetHistory
+  slide Nothing "" (cfg & x +~ slideWidth * 8) $ do
+    let twitterAuthorizeButton = twitterAuthorize rootURL
+    el "h4" $ text "Authorizing Twitter"
+    examplePre [r|
+      do creds <- twitterAuthorizeButton
+         newTweet <- el "div" $ do
+           disableUntilAuth <- forDyn creds $ \c ->
+             if isNothing c then ("disabled" =: "true") else Map.empty
+           tweetBoxAttrs <- mapDyn (Map.insert "maxlength" "140") disableUntilAuth
+           rec tweetBox <- textArea $
+                 def & attributes .~ tweetBoxAttrs
+                     & setValue .~ fmap (const "") tweetButton
+               tweetButton <- buttonWithIcon "twitter" "Tweet!"
+           displayNumChars tweetBox
+           return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
+         return ()
+       |] twitterSlideTypes
+    do creds <- twitterAuthorizeButton
+       newTweet <- el "div" $ do
+         disableUntilAuth <- forDyn creds $ \c ->
+           if isNothing c then ("disabled" =: "true") else Map.empty
+         tweetBoxAttrs <- mapDyn (Map.insert "maxlength" "140") disableUntilAuth
+         rec tweetBox <- textArea $
+               def & attributes .~ tweetBoxAttrs
+                   & setValue .~ fmap (const "") tweetButton
+             tweetButton <- buttonWithIcon "twitter" "Tweet!"
+         displayNumChars tweetBox
+         return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
+       return ()
+    return ()
   slide Nothing "" (cfg & x +~ slideWidth * 9) $ do
-    c <- el "div" $ twitterAuthorize rootURL
-    disableUntilAuth <- mapDyn (\x -> if x == Nothing then ("disabled" =: "true" <> "style" =: "cursor:not-allowed;") else mempty) c
-    twote <- el "div" $ do
-      rec t <- input' "text" "" (fmap (const "") twote) (constDyn mempty)
-          send <- liftM (_el_clicked . fst) $ elDynAttr' "button" disableUntilAuth $ text "Tweet"
-          tweet :: Event t (Maybe Credential, String) <- liftM (flip tagDyn send) $ combineDyn (,) c (_textInput_value t)
-          twote <- performRequestAsync $ fmap (\(x,y) -> toTweetReq x y) $  fmapMaybe id $ fmap biseqFirst tweet
-      return twote
-    el "div" $ do
-      s :: Event t StreamingAPI <- startStream $ fmapMaybe id $ updated c
-      tweetList =<< mapDyn (Map.fromList . zip [(1::Int)..]) =<< foldDyn (:) [] (fmapMaybe (\x -> case x of
-                                                                                                  SStatus a -> Just a
-                                                                                                  _ -> Nothing) s)
-  return ()
+    el "h4" $ text "Making a tweet request"
+    examplePre [r|
+      do creds <- twitterAuthorizeButton
+         newTweet <- tweetWidget creds
+         let tweetReq = fmapMaybe (uncurry toTweetReq) $ attachDyn creds newTweet
+         tweeted <- performRequestAsync tweetReq
+         latestTweet <- holdDyn Nothing $ fmap decodeXhrResponse tweeted
+         text "Last status: "
+         dynText =<< mapDyn (maybe "" tweetStatus) latestTweet
+     |] twitterSlideTypes
+    do creds <- twitterAuthorizeButton
+       newTweet <- tweetWidget creds
+       let tweetReq = fmapMaybe (uncurry toTweetReq) $ attachDyn creds newTweet
+       tweeted <- performRequestAsync tweetReq
+       latestTweet <- holdDyn Nothing $ fmap decodeXhrResponse tweeted
+       text "Last status: "
+       dynText =<< mapDyn (maybe "" tweetStatus) latestTweet
+       return ()
+  slide Nothing "" (cfg & x +~ slideWidth * 10) $ divClass "left" $ do
+    el "h4" $ text "Showing a stream of tweets"
+    examplePre [r|
+      do creds <- twitterAuthorizeButton
+         _ <- liveTweetWidget creds
+         tweetStream <- startStream $ fmapMaybe id $ updated creds
+         tweets <- foldDyn (:) [] tweetStream
+         divClass "stream" $ simpleList tweets $ \t -> el "div" $ do
+           el "strong" $ dynText =<< mapDyn tweetUserName t
+           text ": "
+           dynText =<< mapDyn tweetStatus t
+     |] twitterSlideTypes
+    do creds <- twitterAuthorizeButton
+       _ <- liveTweetWidget creds
+       tweetStream <- startStream $ fmapMaybe id $ updated creds
+       tweets <- foldDyn (:) [] tweetStream
+       divClass "stream" $ simpleList tweets $ \t -> el "div" $ do
+         el "strong" $ dynText =<< mapDyn tweetUserName t
+         text ": "
+         dynText =<< mapDyn tweetStatus t
+       return ()
+  slide Nothing "" (cfg & x +~ slideWidth * 11) $ divClass "left" $ do
+    el "h4" $ text "Streaming with style"
+    examplePre [r|
+      do creds <- twitterAuthorizeButton
+         _ <- liveTweetWidget creds
+         tweetStream <- startStream $ fmapMaybe id $ updated creds
+         tweets <- foldDyn (:) [] tweetStream
+         divClass "stream" $ elClass "ul" "fa-ul" $ do
+           simpleList tweets $ \t -> el "li" $ do
+             elClass "i" "fa-li fa fa-twitter" $ return ()
+             el "strong" $ dynText =<< mapDyn tweetUserName t
+             el "p" $ dynText =<< mapDyn tweetStatus t
+      |] twitterSlideTypes
+    do creds <- twitterAuthorizeButton
+       _ <- liveTweetWidget creds
+       tweetStream <- startStream $ fmapMaybe id $ updated creds
+       tweets <- foldDyn (:) [] tweetStream
+       divClass "stream" $ elClass "ul" "fa-ul" $ do
+         el "h1" $ dynText =<< mapDyn userNameFromCreds creds
+         simpleList tweets $ \t -> el "li" $ do
+           elClass "i" "fa-li fa fa-twitter" $ return ()
+           el "strong" $ dynText =<< mapDyn tweetUserName t
+           el "p" $ dynText =<< mapDyn tweetStatus t
+       return (creds, tweets)
 
-tweetControl :: MonadWidget t m => m (Event t String)
-tweetControl = el "div" $ do
+onlyStatus :: StreamingAPI -> Maybe Status
+onlyStatus s = case s of
+                    SStatus a -> Just a
+                    _ -> Nothing
+
+userNameFromCreds :: Maybe Credential -> String
+userNameFromCreds c = case join $ fmap (lookup (encodeUtf8 $ T.pack "screen_name")) c of
+                            Nothing -> "Please login"
+                            Just c' -> "@" <> (T.unpack $ decodeUtf8 c')
+
+
+tweetUserName = T.unpack . userName . statusUser
+tweetStatus = T.unpack . statusText
+
+toTweetReq :: Maybe Credential -> String -> Maybe XhrRequest
+toTweetReq mc s = case mc of 
+                       Just c -> Just $ XhrRequest "POST" "/twitter/status" $ def { _xhrRequestConfig_sendData = Just $ show (c,s) }
+                       Nothing -> Nothing
+
+liveTweetWidget :: MonadWidget t m => Dynamic t (Maybe Credential) -> m (Event t (Maybe String))
+liveTweetWidget creds = do
+  newTweet <- tweetWidget creds
+  let tweetReq = fmapMaybe (uncurry toTweetReq) $ attachDyn creds newTweet
+  liftM (fmap decodeXhrResponse) $ performRequestAsync tweetReq
+
+tweetWidget :: MonadWidget t m => Dynamic t (Maybe Credential) -> m (Event t String)
+tweetWidget credentials = el "div" $ do
+  disableUntilAuth <- forDyn credentials $ \c ->
+    if isNothing c then ("disabled" =: "true") else Map.empty
+  tweetBoxAttrs <- mapDyn (Map.insert "maxlength" "140") disableUntilAuth
   rec tweetBox <- textArea $
-        def & attributes .~ constDyn ("maxlength" =: "140")
+        def & attributes .~ tweetBoxAttrs
             & setValue .~ fmap (const "") tweetButton
       tweetButton <- buttonWithIcon "twitter" "Tweet!"
   displayNumChars tweetBox
@@ -529,11 +664,11 @@ tweetControl = el "div" $ do
 type Credential = SimpleQuery
 
 twitterAuthorize :: forall t m. MonadWidget t m => String -> m (Dynamic t (Maybe Credential))
-twitterAuthorize rootURL = do
+twitterAuthorize rootURL = divClass "twitter-authorize" $ do
   r <- performRequestAsync . fmap (const $ XhrRequest "GET" ("/oauth?callback=" <> rootURL <> "/blank") def) =<< getPostBuild
   url <- holdDyn "" $ fmapMaybe id $ fmap respBody r
   auth <- buttonWithIcon "key" "Authorize"
-  win <- performEvent (fmap (\u -> liftIO $ windowOpen u "test" "height=250, width=250") $ tagDyn url auth)
+  win <- performEvent (fmap (\u -> liftIO $ windowOpen u "twitter-oauth" "height=250, width=250") $ tagDyn url auth)
   temp <- performEventAsync (fmap (\w cb -> liftIO $ waitForOauth w cb) win)
   cr <- performRequestAsync $ fmap (\tc -> XhrRequest "GET" ("/twitter/secret" <> toQueryString tc) def) temp
   let c :: Event t Credential = fmapMaybe readMay $ fmapMaybe respBody cr
@@ -549,26 +684,20 @@ displayNumChars tweetBox = el "div" $ do
   display numChars
   text " characters"
 
-timeline :: forall t m a. MonadWidget t m => Dynamic t (Maybe Credential) -> Event t a -> Dynamic t (Map String String) -> m ()
-timeline c update active = el "div" $ do
-  getTL <- liftM (_el_clicked . fst) $ elDynAttr' "button" active $ text "Get My Timeline"
-  tlr <- performRequestAsync (fmap (\cred -> XhrRequest "GET" ("/twitter/timeline" <> toQueryString cred) def) $ fmapMaybe id $ tagDyn c $ leftmost [getTL, fmap (const ()) update])
-  dyn =<< holdDyn blank (leftmost [fmap (const $ icon "spinner fa-pulse") getTL, fmap (const blank) tlr])
-  let tl :: Event t [Status] = fmapMaybe (join . fmap (decode . LBS.fromStrict . encodeUtf8 . T.pack) . respBody) tlr
-  statuses <- holdDyn Map.empty $ fmap (Map.fromList . take 5 . zip [(1::Int)..]) tl
-  tweetList statuses
+tweetList :: (MonadWidget t m) => Dynamic t [Status] -> m ()
+tweetList tweets = do
+  divClass "stream" $ elClass "ul" "fa-ul" $ do
+    simpleList tweets $ \t -> el "li" $ do
+      elClass "i" "fa-li fa fa-twitter" $ return ()
+      el "strong" $ dynText =<< mapDyn tweetUserName t
+      el "p" $ dynText =<< mapDyn tweetStatus t
   return ()
 
-tweetList :: (MonadWidget t m, Ord k) => Dynamic t (Map k Status) -> m (Dynamic t (Map k ()))
-tweetList statuses = elAttr "div" ("style" =: "") $ elClass "ul" "fa-ul" $ list statuses $ \s -> do
-  el "li" $ do
-    elClass "i" "fa-li fa fa-twitter" $ return ()
-    el "strong" $ dynText =<< mapDyn (T.unpack . userName . statusUser) s
-    el "p" $ dynText =<< mapDyn (T.unpack . statusText) s
-    elAttr "p" ("style" =: "font-size:50%;") $ dynText =<< mapDyn (show . statusCreatedAt) s
+startStream :: forall t m. MonadWidget t m => Event t Credential -> m (Event t Status)
+startStream cred = do
+  s <- liftM (switch . current) $ widgetHold (return never) (fmap stream cred)
+  return $ fmapMaybe onlyStatus s
 
-startStream :: forall t m. MonadWidget t m => Event t Credential -> m (Event t StreamingAPI)
-startStream cred = liftM (switch . current) $ widgetHold (return never) (fmap stream cred)
 
 stream :: MonadWidget t m => Credential -> m (Event t StreamingAPI)
 stream c = do
@@ -579,9 +708,6 @@ icon i = elClass "i" ("fa fa-" <> i) $ return ()
 
 biseqFirst :: Monad m => (m a, b) -> m (a, b)
 biseqFirst (a,b) = bisequence (a, return b)
-
-toTweetReq :: Credential -> String -> XhrRequest
-toTweetReq c s = XhrRequest "POST" "/twitter/status" $ def { _xhrRequestConfig_sendData = Just $ show (c,s) }
 
 respBody :: XhrResponse -> Maybe String
 respBody = fmap fromJSString . _xhrResponse_body

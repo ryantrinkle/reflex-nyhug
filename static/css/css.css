@@ -18,6 +18,10 @@ h4 {
   font-size: 200%;
 }
 
+[disabled] {
+  cursor: not-allowed;
+}
+
 textarea {
   resize: none;
   height: 192px;
@@ -25,6 +29,65 @@ textarea {
   float: left;
   font-size: 44px;
   font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+textarea[disabled] {
+  background: repeating-linear-gradient(
+    45deg,
+    darkgray,
+    darkgray 25px,
+    lightgray 25px,
+    lightgray 50px
+  );
+  border-color: darkgray;
+}
+
+.left textarea {
+  height: 96px;
+  width: 640px;
+  font-size: 32px;
+}
+
+.left textarea + button {
+  height: 96px;
+  width: 320px;
+  font-size: 32px;
+}
+
+.left button {
+  height: 64px;
+  font-size: 32px;
+}
+
+.left {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 1440px;
+}
+.left pre {
+  font-size: 36px;
+}
+
+
+.stream {
+  position: fixed;
+  right: 0px;
+  top: 0;
+  width: 480px;
+  height: 1192px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+.stream > * {
+  font-size: smaller;
+}
+.stream h1 {
+  font-size: 64px;
+}
+
+.stream::-webkit-scrollbar {
+  display: none;
 }
 
 .example hr {
@@ -126,7 +189,7 @@ body     { pointer-events: none; }
 
 .step {
     width: 1920px;
-    /* min-height: 1480px; */
+    min-height: 1480px;
 
     -webkit-box-sizing: border-box;
     -moz-box-sizing:    border-box;
