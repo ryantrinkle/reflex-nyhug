@@ -189,7 +189,7 @@ body     { pointer-events: none; }
 
 .step {
     width: 1920px;
-    min-height: 1480px;
+    /* min-height: 1480px; */
 
     -webkit-box-sizing: border-box;
     -moz-box-sizing:    border-box;
