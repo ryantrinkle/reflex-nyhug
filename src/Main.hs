@@ -264,7 +264,6 @@ breakSlide cfg = slide Nothing "" cfg $ do
       cd try-reflex
       ./try-reflex
     |]
-  el "h3" $ text "Warning: takes a very long time to build"
 
 frpRequirementsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 frpRequirementsSlides cfg = do
