@@ -824,7 +824,15 @@ withPunct a p b = do
   text b
 
 ryanFooter :: MonadWidget t m => Dynamic t (Maybe Credential) -> Dynamic t [Status] -> m ()
-ryanFooter creds tweets = elAttr "a" ("class" =: "logo logo-bottom" <> "href" =: "mailto:ryan.trinkle@obsidian.systems")  $ do
-  withPunct "RYAN" "." "TRINKLE"
-  withPunct "" "@" ""
-  withPunct "OBSIDIAN" "." "SYSTEMS"
+ryanFooter creds tweets = do
+  t <- mapDyn headMay tweets
+  showHide <- mapDyn (\x -> if isNothing x then Map.empty else ("class" =: "fa-li fa fa-twitter")) t
+  divClass "tweet-footer" $ do
+    elDynAttr "i" showHide $ return ()
+    el "strong" $ dynText =<< mapDyn (maybe "" id . fmap tweetUserName) t
+    text ": "
+    el "span" $ dynText =<< mapDyn (maybe "" id . fmap tweetStatus) t
+  elAttr "a" ("class" =: "logo logo-bottom" <> "href" =: "mailto:ryan.trinkle@obsidian.systems")  $ do
+    withPunct "RYAN" "." "TRINKLE"
+    withPunct "" "@" ""
+    withPunct "OBSIDIAN" "." "SYSTEMS"
