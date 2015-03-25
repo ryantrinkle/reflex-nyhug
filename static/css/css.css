@@ -172,6 +172,7 @@ textarea + button {
     right: 5px;
     display: block;
     font-size: 24px;
+    padding-right: 0.5em;
 }
 
 .logo .punctuation {
