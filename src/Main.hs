@@ -145,6 +145,7 @@ slides rootURL = do
   -- Part 2
   frpRequirementsSlides $ def & y +~ slideHeight * 4
   reflexSemanticsSlides $ def & y +~ slideHeight * 5
+  nextStepsSlides $ def & y +~ slideHeight * 6
 
 introSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 introSlides cfg = do
@@ -158,9 +159,11 @@ introSlides cfg = do
       el "strong" $ text "pure functions"
   slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
     el "h3" $ do
-      text "Pure functions make code "
-      el "strong" $ text "referentially transparent,"
-      text " enabling equational and local reasoning"
+      text "Pure functions enable "
+      el "strong" $ text "equational"
+      text " and "
+      el "strong" $ text "local"
+      text " reasoning"
   slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
     el "h3" $ do
       el "strong" $ text "Equational reasoning"
@@ -169,9 +172,7 @@ introSlides cfg = do
       text " code safely"
     el "br" $ return ()
     el "h3" $ do
-      text "For example, we can "
-      el "strong" $ text "always"
-      text " replace x+x with 2*x"
+      text "x+x \x2261 2*x"
   slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
     el "h3" $ do
       el "strong" $ text "Local reasoning"
@@ -180,9 +181,7 @@ introSlides cfg = do
       text " code in isolation"
     el "br" $ return ()
     el "h3" $ do
-      text "For example, if f(x) = 2x, we know that f(3) will "
-      el "strong" $ text "always"
-      text " be 6"
+      text "If f(x) = 2x, then f(3) \x2261 6"
   slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
     el "h3" $ do
       el "strong" $ text "Equational"
@@ -245,16 +244,13 @@ reflexDemoSlides cfg = do
     el "h1" $ text "Redline" --TODO: Logo
   slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
     elAttr "h1" ("style" =: "font-family:'Coustard',serif;font-weight:900") $ text "Telescope"
-  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
-    el "h1" $ text "This presentation!"
-    el "ul" $ do
-      el "li" $ text "Reflex-DOM"
-      el "li" $ text "impress.js"
-      el "li" $ text "hscolour"
-      el "li" $ text "Snap Framework"
-      el "li" $ text "websockets-snap"
-      el "li" $ text "twitter-conduit"
-      el "li" $ text "authenticate-oauth"
+  slide Nothing "no-pointer-events" (cfg & x +~ slideWidth * 4
+                        & y -~ (slideHeight `div` 5)
+                        & scale *~ 11
+                   ) $ do
+    el "h1" $ text "This presentation"
+    el "h4" $ text "Built with Reflex.Dom, impress.js, and Snap"
+    elAttr "div" ("style" =: "width:0;height:1050px") $ return ()
 
 breakSlide :: forall t m. MonadWidget t m => SlideConfig -> m ()
 breakSlide cfg = slide Nothing "" cfg $ do
@@ -264,22 +260,21 @@ breakSlide cfg = slide Nothing "" cfg $ do
       cd try-reflex
       ./try-reflex
     |]
-  el "h3" $ text "Warning: takes a very long time to build"
 
 frpRequirementsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 frpRequirementsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h3" $ text "Practical systems must be expressive, comprehensible, and efficient"
   slide Nothing "" (cfg & x +~ slideWidth * 1) $ do
-    el "h3" $ text "Practical FRP should be able to express dynamic data flows"
+    el "h3" $ text "Practical FRP should support dynamic data flow"
   slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
-    el "h3" $ text "Practical FRP should be able to express different notions of time"
+    el "h3" $ text "Practical FRP should support a variety of concepts of time"
   slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
     el "h3" $ text "Practical FRP should be fully deterministic"
   slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
-    el "h3" $ text "Practical FRP should integrate cleanly with the host language"
+    el "h3" $ text "Practical FRP should use idiomatic Haskell"
   slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
-    el "h3" $ text "Practical FRP should have good asymptotic performance"
+    el "h3" $ text "Practical FRP should have good performance"
   slide Nothing "" (cfg & x +~ slideWidth * 6) $ do
     el "h3" $ text "Practical FRP should be fully garbage-collectable"
 
@@ -331,6 +326,29 @@ reflexSemanticsSlides cfg = do
       hold :: MonadHold t m => a -> Event t a -> m (Behavior t a)
       instance MonadHold t (PushM t)
     |] mempty
+
+nextStepsSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
+nextStepsSlides cfg = do
+  slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
+    el "h2" $ text "The Future of Reflex"
+  slide Nothing "" (cfg & x +~ slideWidth * 1) $ el "h3" $ do
+    text "Reflex is ready for production use "
+    el "strong" $ text "today"
+  slide Nothing "" (cfg & x +~ slideWidth * 2) $ el "h3" $ do
+    text "The Reflex API is improving rapidly, so please "
+    el "strong" $ text "use upper-bounds"
+  slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
+    el "h3" $ do
+      text "Reflex is available on "
+      el "strong" $ text "github"
+      text " and "
+      el "strong" $ text "hackage"
+    elAttr "pre" ("style" =: "font-size:larger") $ do
+      text "https://github.com/ryantrinkle/reflex\n"
+      text "https://hackage.haskell.org/package/reflex"
+  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
+    el "h1" $ text "Questions?"
+    
 
 reflexTypes = Map.fromList [ ("constDyn", "a -> Dynamic t a")
                            , ("tag", "Behavior t a -> Event t b -> Event t a")
