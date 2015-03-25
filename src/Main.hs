@@ -90,9 +90,9 @@ head = do
   metaNameContent "description" "Reflex ImpressJs Example"
   metaNameContent "author" "Obsidian Systems LLC"
   stylesheet "//fonts.googleapis.com/css?family=Alegreya"
-  --stylesheet "//fonts.googleapis.com/css?family=Droid+Serif"
   stylesheet "//fonts.googleapis.com/css?family=Raleway:400,300"
-  --stylesheet "//fonts.googleapis.com/css?family=Inconsolata:400,700"
+  stylesheet "//fonts.googleapis.com/css?family=Droid+Serif"
+  stylesheet "//fonts.googleapis.com/css?family=Josefin+Sans:300,400"
   -- Telescope logo font
   elAttr "link" ("href" =: "http://fonts.googleapis.com/css?family=Coustard:900" <> "rel" =: "stylesheet" <> "type" =: "text/css") $ return ()
   stylesheet "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
@@ -108,8 +108,9 @@ body rootURL = do
   fallback $ el "p" $ do
     text "Sorry, your browser is not supported. A simplified version of the presentation follows. To get the full experience, please use a recent version of Chrome, Firefox, or Safari, or contact "
     ahref "mailto:info@obsidian.systems" "info@obsidian.systems"
-  ryanFooter
-  impressDiv $ slides rootURL
+  rec ryanFooter creds tweets
+      (creds, tweets) <- impressDiv $ slides rootURL
+  return ()
 
 --TODO: should we have doubleInput, too?
 --TODO: move to reflex-dom
@@ -134,11 +135,11 @@ slideWidth = 2500
 slideHeight :: Int
 slideHeight = 1500
 
-slides :: forall t m. MonadWidget t m => String -> m ()
+slides :: forall t m. MonadWidget t m => String -> m (Dynamic t (Maybe Credential), Dynamic t [Status])
 slides rootURL = do
   -- Part 1
   introSlides def
-  twitterSlides rootURL $ def & y +~ slideHeight * 1
+  (creds, tweets) <- twitterSlides rootURL $ def & y +~ slideHeight * 1
   reflexDemoSlides $ def & y +~ slideHeight * 2
   -- Break
   breakSlide $ def & y +~ slideHeight * 3
@@ -146,6 +147,7 @@ slides rootURL = do
   frpRequirementsSlides $ def & y +~ slideHeight * 4
   reflexSemanticsSlides $ def & y +~ slideHeight * 5
   nextStepsSlides $ def & y +~ slideHeight * 6
+  return (creds, tweets)
 
 introSlides :: forall t m. MonadWidget t m => SlideConfig -> m ()
 introSlides cfg = do
@@ -241,10 +243,27 @@ reflexDemoSlides cfg = do
         el "body" $ do
           todoMVC
   slide Nothing "" (cfg & x +~ slideWidth * 2) $ do
-    el "h1" $ text "Redline" --TODO: Logo
+    elClass "h1" "redline" $ do 
+      elAttr "span" ("style" =: "color:red;") $ text "RED"
+      text "LINE"
+    el "p" $ text "Online document negotiation and collaboration"
+    elAttr "img" ("src" =: "images/redline.png" <> "class" =: "screenshot") $ return ()
   slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
+    elClass "h1" "prasava" $ do 
+      text "Prasava"
+    el "p" $ text "Real-time legal courier geolocation tracking"
+    elAttr "img" ("src" =: "images/prasava.png" <> "class" =: "screenshot") $ return ()
+
+  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
     elAttr "h1" ("style" =: "font-family:'Coustard',serif;font-weight:900") $ text "Telescope"
-  slide Nothing "no-pointer-events" (cfg & x +~ slideWidth * 4
+    el "p" $ text "Powerful and flexible data analysis tools"
+    elAttr "img" ("src" =: "images/telescope.png" <> "class" =: "screenshot") $ return ()
+  slide Nothing "" (cfg & x +~ slideWidth * 5) $ do
+    elClass "h1" "obsidian" $ logo ""
+    el "p" $ text "https://obsidian.systems"
+    elAttr "img" ("src" =: "images/obsidian.png" <> "class" =: "screenshot") $ return ()
+
+  slide (Just "overview") "no-pointer-events" (cfg & x +~ slideWidth * 4
                         & y -~ (slideHeight `div` 5)
                         & scale *~ 11
                    ) $ do
@@ -379,8 +398,7 @@ withReflexTypes = Map.union reflexTypes
 
 twitterSlides :: forall t m. MonadWidget t m => String -> SlideConfig -> m (Dynamic t (Maybe Credential), Dynamic t [Status])
 twitterSlides rootURL cfg = do
-  let twitterAuthorizeButton = twitterAuthorize rootURL
-      twitterSlideTypes = withReflexTypes $ Map.fromList
+  let twitterSlideTypes = withReflexTypes $ Map.fromList
         [ ("newTweet", "Event t String")
         , ("tweetBox", "TextArea t")
         , ("tweetButton", "Event t ()")
@@ -547,7 +565,7 @@ twitterSlides rootURL cfg = do
          tweetHistory <- foldDyn (:) [] newTweet
          text "Tweet history: "
          display tweetHistory
-  slide Nothing "" (cfg & x +~ slideWidth * 8) $ do
+  creds <- slide Nothing "" (cfg & x +~ slideWidth * 8) $ do
     let twitterAuthorizeButton = twitterAuthorize rootURL
     el "h4" $ text "Authorizing Twitter"
     examplePre [r|
@@ -562,7 +580,6 @@ twitterSlides rootURL cfg = do
                tweetButton <- buttonWithIcon "twitter" "Tweet!"
            displayNumChars tweetBox
            return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
-         return ()
        |] twitterSlideTypes
     do creds <- twitterAuthorizeButton
        newTweet <- el "div" $ do
@@ -575,21 +592,18 @@ twitterSlides rootURL cfg = do
              tweetButton <- buttonWithIcon "twitter" "Tweet!"
          displayNumChars tweetBox
          return $ ffilter (/="") $ tag (current (value tweetBox)) tweetButton
-       return ()
-    return ()
+       return creds
   slide Nothing "" (cfg & x +~ slideWidth * 9) $ do
     el "h4" $ text "Making a tweet request"
     examplePre [r|
-      do creds <- twitterAuthorizeButton
-         newTweet <- tweetWidget creds
+      do newTweet <- tweetWidget creds
          let tweetReq = fmapMaybe (uncurry toTweetReq) $ attachDyn creds newTweet
          tweeted <- performRequestAsync tweetReq
          latestTweet <- holdDyn Nothing $ fmap decodeXhrResponse tweeted
          text "Last status: "
          dynText =<< mapDyn (maybe "" tweetStatus) latestTweet
      |] twitterSlideTypes
-    do creds <- twitterAuthorizeButton
-       newTweet <- tweetWidget creds
+    do newTweet <- tweetWidget creds
        let tweetReq = fmapMaybe (uncurry toTweetReq) $ attachDyn creds newTweet
        tweeted <- performRequestAsync tweetReq
        latestTweet <- holdDyn Nothing $ fmap decodeXhrResponse tweeted
@@ -599,8 +613,7 @@ twitterSlides rootURL cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 10) $ divClass "left" $ do
     el "h4" $ text "Showing a stream of tweets"
     examplePre [r|
-      do creds <- twitterAuthorizeButton
-         _ <- liveTweetWidget creds
+      do _ <- liveTweetWidget creds
          tweetStream <- startStream $ fmapMaybe id $ updated creds
          tweets <- foldDyn (:) [] tweetStream
          divClass "stream" $ simpleList tweets $ \t -> el "div" $ do
@@ -608,8 +621,7 @@ twitterSlides rootURL cfg = do
            text ": "
            dynText =<< mapDyn tweetStatus t
      |] twitterSlideTypes
-    do creds <- twitterAuthorizeButton
-       _ <- liveTweetWidget creds
+    do _ <- liveTweetWidget creds
        tweetStream <- startStream $ fmapMaybe id $ updated creds
        tweets <- foldDyn (:) [] tweetStream
        divClass "stream" $ simpleList tweets $ \t -> el "div" $ do
@@ -617,11 +629,10 @@ twitterSlides rootURL cfg = do
          text ": "
          dynText =<< mapDyn tweetStatus t
        return ()
-  slide Nothing "" (cfg & x +~ slideWidth * 11) $ divClass "left" $ do
+  tweets <- slide Nothing "" (cfg & x +~ slideWidth * 11) $ divClass "left" $ do
     el "h4" $ text "Streaming with style"
     examplePre [r|
-      do creds <- twitterAuthorizeButton
-         _ <- liveTweetWidget creds
+      do _ <- liveTweetWidget creds
          tweetStream <- startStream $ fmapMaybe id $ updated creds
          tweets <- foldDyn (:) [] tweetStream
          divClass "stream" $ elClass "ul" "fa-ul" $ do
@@ -630,8 +641,7 @@ twitterSlides rootURL cfg = do
              el "strong" $ dynText =<< mapDyn tweetUserName t
              el "p" $ dynText =<< mapDyn tweetStatus t
       |] twitterSlideTypes
-    do creds <- twitterAuthorizeButton
-       _ <- liveTweetWidget creds
+    do _ <- liveTweetWidget creds
        tweetStream <- startStream $ fmapMaybe id $ updated creds
        tweets <- foldDyn (:) [] tweetStream
        divClass "stream" $ elClass "ul" "fa-ul" $ do
@@ -640,7 +650,8 @@ twitterSlides rootURL cfg = do
            elClass "i" "fa-li fa fa-twitter" $ return ()
            el "strong" $ dynText =<< mapDyn tweetUserName t
            el "p" $ dynText =<< mapDyn tweetStatus t
-       return (creds, tweets)
+       return tweets
+  return (creds, tweets)
 
 onlyStatus :: StreamingAPI -> Maybe Status
 onlyStatus s = case s of
@@ -768,7 +779,8 @@ withPunct a p b = do
   elAttr "span" ("class" =: "punctuation") $ text p
   text b
 
-ryanFooter = elAttr "a" ("class" =: "logo logo-bottom" <> "href" =: "mailto:ryan.trinkle@obsidian.systems")  $ do
+ryanFooter :: MonadWidget t m => Dynamic t (Maybe Credential) -> Dynamic t [Status] -> m ()
+ryanFooter creds tweets = elAttr "a" ("class" =: "logo logo-bottom" <> "href" =: "mailto:ryan.trinkle@obsidian.systems")  $ do
   withPunct "RYAN" "." "TRINKLE"
   withPunct "" "@" ""
   withPunct "OBSIDIAN" "." "SYSTEMS"

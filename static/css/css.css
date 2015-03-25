@@ -69,6 +69,11 @@ textarea[disabled] {
   font-size: 36px;
 }
 
+.screenshot {
+  max-height: 940px;
+  margin: auto;
+  display: block;
+}
 
 .stream {
   position: fixed;
@@ -107,6 +112,18 @@ div {
   font-size: 48px;
   clear: left;
 }
+.redline {
+  font-family: "Josefin Sans", sans-serif;
+  font-size: 128px;
+}
+.prasava {
+  font-family: "Droid Serif", serif;
+  font-size: 128px;
+}
+.obsidian {
+  font-size: 128px;
+}
+
 button {
   font-family: 'Raleway', helvetica, sans-serif;
   height: 128px;
