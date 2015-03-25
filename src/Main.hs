@@ -244,16 +244,13 @@ reflexDemoSlides cfg = do
     el "h1" $ text "Redline" --TODO: Logo
   slide Nothing "" (cfg & x +~ slideWidth * 3) $ do
     elAttr "h1" ("style" =: "font-family:'Coustard',serif;font-weight:900") $ text "Telescope"
-  slide Nothing "" (cfg & x +~ slideWidth * 4) $ do
-    el "h1" $ text "This presentation!"
-    el "ul" $ do
-      el "li" $ text "Reflex-DOM"
-      el "li" $ text "impress.js"
-      el "li" $ text "hscolour"
-      el "li" $ text "Snap Framework"
-      el "li" $ text "websockets-snap"
-      el "li" $ text "twitter-conduit"
-      el "li" $ text "authenticate-oauth"
+  slide Nothing "" (cfg & x +~ slideWidth * 4
+                        & y -~ (slideHeight `div` 5)
+                        & scale *~ 11
+                   ) $ do
+    el "h1" $ text "This presentation"
+    el "h4" $ text "Built with Reflex.Dom, impress.js, and Snap"
+    elAttr "div" ("style" =: "width:1920px;height:1050px;") $ return ()
 
 breakSlide :: forall t m. MonadWidget t m => SlideConfig -> m ()
 breakSlide cfg = slide Nothing "" cfg $ do
