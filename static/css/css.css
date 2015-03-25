@@ -80,7 +80,7 @@ textarea[disabled] {
   right: 0px;
   top: 0;
   width: 480px;
-  height: 1192px;
+  height: 1100px;
   overflow-y: scroll;
   overflow-x: hidden;
 }
@@ -99,6 +99,11 @@ textarea[disabled] {
   border-top: 1px solid black;
 }
 
+.tweet-footer {
+  position: fixed;
+  bottom: 5px;
+  width: 75%;
+}
 pre {
   font-size: 44px;
 }

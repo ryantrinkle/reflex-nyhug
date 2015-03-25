@@ -658,7 +658,7 @@ twitterSlides rootURL cfg = do
        text "Last status: "
        dynText =<< mapDyn (maybe "" tweetStatus) latestTweet
        return ()
-  slide Nothing "" (cfg & x +~ slideWidth * 10) $ divClass "left" $ do
+  tweets <- slide Nothing "" (cfg & x +~ slideWidth * 10) $ divClass "left" $ do
     el "h4" $ text "Showing a stream of tweets"
     examplePre [r|
       do _ <- liveTweetWidget creds
@@ -676,13 +676,11 @@ twitterSlides rootURL cfg = do
          el "strong" $ dynText =<< mapDyn tweetUserName t
          text ": "
          dynText =<< mapDyn tweetStatus t
-       return ()
-  tweets <- slide Nothing "" (cfg & x +~ slideWidth * 11) $ divClass "left" $ do
+       return tweets
+  slide Nothing "" (cfg & x +~ slideWidth * 11) $ divClass "left" $ do
     el "h4" $ text "Streaming with style"
     examplePre [r|
       do _ <- liveTweetWidget creds
-         tweetStream <- startStream $ fmapMaybe id $ updated creds
-         tweets <- foldDyn (:) [] tweetStream
          divClass "stream" $ elClass "ul" "fa-ul" $ do
            simpleList tweets $ \t -> el "li" $ do
              elClass "i" "fa-li fa fa-twitter" $ return ()
@@ -690,15 +688,13 @@ twitterSlides rootURL cfg = do
              el "p" $ dynText =<< mapDyn tweetStatus t
       |] twitterSlideTypes
     do _ <- liveTweetWidget creds
-       tweetStream <- startStream $ fmapMaybe id $ updated creds
-       tweets <- foldDyn (:) [] tweetStream
        divClass "stream" $ elClass "ul" "fa-ul" $ do
          el "h1" $ dynText =<< mapDyn userNameFromCreds creds
          simpleList tweets $ \t -> el "li" $ do
            elClass "i" "fa-li fa fa-twitter" $ return ()
            el "strong" $ dynText =<< mapDyn tweetUserName t
            el "p" $ dynText =<< mapDyn tweetStatus t
-       return tweets
+       return ()
   return (creds, tweets)
 
 onlyStatus :: StreamingAPI -> Maybe Status
