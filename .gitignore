@@ -1,0 +1,9 @@
+static/.jsexe/*
+*.js_hi
+*.js_o
+*.orig
+*.js_dyn_hi
+*.js_dyn_o
+tags
+TAGS
+*~

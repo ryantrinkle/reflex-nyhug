@@ -1,0 +1,15 @@
+[submodule "reflex-dom"]
+	path = reflex-dom
+	url = https://github.com/ryantrinkle/reflex-dom
+[submodule "reflex"]
+	path = reflex
+	url = https://github.com/ryantrinkle/reflex
+[submodule "nixpkgs"]
+	path = nixpkgs
+	url = https://github.com/ryantrinkle/nixpkgs
+[submodule "impress.js"]
+	path = impress.js
+	url = git@github.com:ryantrinkle/impress.js
+[submodule "authenticate"]
+	path = authenticate
+	url = git@github.com:ryantrinkle/authenticate
