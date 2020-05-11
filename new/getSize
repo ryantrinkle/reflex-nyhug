@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
-cloc --by-file frontend/src/Frontend.hs $(find common/src/Common -name '*.hs') backend/src/Backend.hs $(find backend/src/Backend -name '*.hs')

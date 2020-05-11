@@ -24,7 +24,7 @@ let # Copied from <nixpkgs/pkgs/development/haskell-modules/lib.nix> so that -I 
     };
 in rec {
   inherit nixpkgs;
-  ghc = extendHaskellPackages nixpkgs.pkgs.haskell-ng.packages.ghc7101;
-  ghcjs = extendHaskellPackages nixpkgs.pkgs.haskell-ng.packages.ghcjs;
+  ghc = extendHaskellPackages nixpkgs.pkgs.haskellPackages;
+  ghcjs = extendHaskellPackages nixpkgs.pkgs.haskell.packages.ghcjs;
   platforms = [ "ghcjs" ] ++ (if !nixpkgs.stdenv.isDarwin then [ "ghc" ] else []);
 }

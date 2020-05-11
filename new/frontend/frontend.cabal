@@ -51,12 +51,9 @@ library
   build-depends: base
                , aeson
                , attoparsec
-               , beam-core
                , bytestring
                , categories
                , common
-               , iv-common
-               , iv-frontend
                , constraints
                , constraints-extras
                , containers
@@ -67,7 +64,6 @@ library
                , monoidal-containers
                , mtl
                , network-uri
-               , obelisk-aeson-orphans
                , obelisk-executable-config-lookup
                , obelisk-frontend
                , obelisk-generated-static
@@ -79,7 +75,6 @@ library
                , these
                , these-lens
                , time
-               , vessel
                , witherable
                , ghcjs-dom
                , reflex-todomvc

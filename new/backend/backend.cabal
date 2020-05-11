@@ -1,134 +1,24 @@
-cabal-version: 2.2
 name: backend
 version: 0.1
+cabal-version: >= 1.8
 build-type: Simple
 
-common common
-  build-depends: aeson
-               , aeson-gadt-th
-               , async
-               , attoparsec
-               , beam-core
-               , beam-postgres
-               , beam-migrate-prototype
-               , bytestring
-               , clientsession
-               , common
-               , iv-common
-               , iv-backend
-               , concurrency
-               , constraints
-               , constraints-extras
-               , containers
-               , criterion
-               , data-default
-               , dejafu
-               , dependent-map
-               , dependent-monoidal-map
-               , dependent-sum
-               , dependent-sum-aeson-orphans
-               , dependent-sum-template
-               , exceptions
-               , filepath
-               , frontend
-               , generic-deriving
-               , ghc-prim
-               , groom
-               , lens
-               , mime-mail
-               , monad-loops
-               , monoidal-containers
-               , mtl
-               , obelisk-aeson-orphans
-               , obelisk-backend
-               , obelisk-email
-               , obelisk-executable-config-lookup
-               , obelisk-getentropy
-               , obelisk-request
-               , obelisk-route
-               , patch
-               , postgresql-libpq
-               , postgresql-simple
-               , pwstore-fast
-               , reflex-dom
-               , resource-pool
-               , semialign
-               , smtp-mail
-               , snap-core
-               , stm
-               , tasty
-               , tasty-hunit
-               , temporary
-               , text
-               , these
-               , these-lens
-               , time
-               , unordered-containers
-               , validation
-               , vessel
-               , websockets
-               , websockets-snap
-  default-extensions:
-    AllowAmbiguousTypes
-    BangPatterns
-    ConstraintKinds
-    DataKinds
-    DefaultSignatures
-    DeriveDataTypeable
-    DeriveFoldable
-    DeriveFunctor
-    DeriveGeneric
-    DeriveTraversable
-    EmptyCase
-    FlexibleContexts
-    FlexibleInstances
-    FunctionalDependencies
-    GADTs
-    GeneralizedNewtypeDeriving
-    InstanceSigs
-    KindSignatures
-    LambdaCase
-    MultiParamTypeClasses
-    OverloadedStrings
-    PolyKinds
-    QuasiQuotes
-    RankNTypes
-    RecursiveDo
-    ScopedTypeVariables
-    StandaloneDeriving
-    TemplateHaskell
-    TypeApplications
-    TypeFamilies
-    TypeOperators
-  ghc-options:
-    -- Showing valid hole fits is too slow
-    -fno-show-valid-hole-fits
-    -- Missing fields in records is almost always a bug
-    -Werror=missing-fields
-    -Wall
-
 library
-  import: common
   hs-source-dirs: src
   if impl(ghcjs)
     buildable: False
   build-depends: base
+               , common
+               , frontend
+               , obelisk-backend
+               , obelisk-route
   exposed-modules:
     Backend
-    Backend.Jobs
-    Backend.Request
-    Backend.Schema
-    Backend.View
-    Benchmark.Backend
-    Test
-    Test.Backend
   ghc-options: -Wall
 
 executable backend
-  import: common
   main-is: main.hs
   hs-source-dirs: src-bin
-  ghc-options: -threaded -rtsopts
   if impl(ghcjs)
     buildable: False
   build-depends: base
@@ -136,26 +26,3 @@ executable backend
                , common
                , frontend
                , obelisk-backend
-
-benchmark benchmark-backend
-  import: common
-  type: exitcode-stdio-1.0
-  main-is: main.hs
-  hs-source-dirs: src-benchmark
-  ghc-options: -threaded -rtsopts
-  build-depends: base
-               , backend
-               , criterion
-
--- test-suite tests
---   import: common
---   type: exitcode-stdio-1.0
---   main-is: Main.hs
---   hs-source-dirs: tests
---   ghc-options: -threaded -rtsopts
---   if impl(ghcjs)
---     buildable: False
---   build-depends: base
---                , backend
---                , common
---                , obelisk-backend

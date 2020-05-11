@@ -1,8 +1,0 @@
-{
-  "url": "ssh://git@gitlab.com/obsidian.systems/obelisk-internal",
-  "rev": "62a2491303545d76eaf1d3df45fd93067bb96a07",
-  "sha256": "0586jarpbzjvhkpgfb0g72qaa6kfvzzm83w0rpbw5avnlbb3ci04",
-  "private": true,
-  "fetchSubmodules": false,
-  "branch": "incremental-db"
-}

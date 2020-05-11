@@ -7,31 +7,14 @@ module Frontend where
 import qualified GHCJS.DOM.Element as JS
 import qualified Language.Javascript.JSaddle as JS
 
-import Obelisk.View.Widget
-import Obelisk.Auth.Frontend
 import qualified Data.Text as T
 import Obelisk.Frontend
 import Obelisk.Route
 
 import Reflex.Dom.Core hiding (button, Window, fromJSString)
-import Obelisk.View.Table
-import Obelisk.Beam.View.Table
 
 import Common.Api
 import Common.Route
-import Common.Schema
-
-import Obelisk.Auth
-import Obelisk.Auth.Bearer.Common.Sign
-import Obelisk.Auth.EmailAndPassword.Common
-import Obelisk.Route.Frontend
-import Obelisk.View.Auth
-import Obelisk.View.Coverage
-import Obelisk.View.Coverable
-import Obelisk.Generated.Static
-import Obelisk.View.Iv.Class
-import Obelisk.View.DMap
-import Obelisk.View.IdentityInterface
 
 import Control.Applicative
 import Control.Lens (_Left, _Right, (^?))
@@ -47,7 +30,6 @@ import qualified Data.Map as Map
 import Data.Semigroup (First(..))
 import Data.Text (Text)
 import Data.Tuple (swap)
-import Data.Vessel
 import Data.Void (Void, absurd)
 import Data.These
 import Data.GADT.Compare
@@ -97,7 +79,7 @@ import Data.IORef
 
 --TODO: Does Aeson still break down on Maybe (Maybe a)?
 
-frontend :: Frontend (R (FullRoute BackendRoute FrontendRoute)) (R FrontendRoute)
+frontend :: Frontend (R (FullRoute BackendRoute FrontendRoute))
 frontend = Frontend
   { _frontend_head = headWidget
   , _frontend_body = bodyWidget ""
