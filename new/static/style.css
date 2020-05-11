@@ -1,0 +1,380 @@
+/*
+ * General Reset -
+ * Reset all margins, padings, borders, outlines, backgrounds, text-decorations to 0/transparent/none.
+ * Set font settings to inherit to avoid un-reset styles.
+ */
+
+a, abbr, acronym, address, applet, area, article, aside, audio,
+b, base, bdi, basefont, bdo, big, blockquote, body, br, button,
+canvas, caption, center, cite, code, col, colgroup, command,
+datalist, dd, del, details, dfn, dir, div, dl, dt,
+em, embed,
+fieldset, figcaption, figure, footer, font, form, frame, frameset,
+h1, h2, h3, h4, h5, h6, head, header, hgroup, hr, html,
+i, iframe, img, input, ins, isindex,
+kbd, keygen,
+label, legend, li, link,
+map, mark, menu, meta, meter,
+nav, noframes, noscript,
+object, ol, optgroup, option, output,
+p, param, pre, progress,
+q,
+rp, rt, ruby,
+s, samp, script, section, select, small, source, span, strike, strong, style, sub, summary, sup,
+table, tbody, td, textarea, tfoot, th, thead, time, title, tr, track, tt,
+u, ul,
+var, video, wbr {
+  vertical-align: baseline;
+  box-sizing: border-box;
+  margin: 0;
+  outline: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  text-decoration: none;
+}
+
+abbr, acronym, address, applet, area, article, aside,
+b, base, bdi, basefont, bdo, big, blockquote, body, br,
+caption, center, cite, code, col, colgroup, command,
+datalist, dd, del, details, dfn, dir, div, dl, dt,
+em,
+figcaption, figure, footer, font, form, frame, frameset,
+h1, h2, h3, h4, h5, h6, head, header, hgroup, hr, html,
+i, iframe, img, ins, isindex,
+kbd, keygen,
+li,
+mark, menu, meta, meter,
+nav, noframes, noscript,
+object, ol, optgroup, output,
+p, param, pre, progress,
+q,
+rp, rt, ruby,
+s, samp, script, section, select, small, source, span, strike, strong, style, sub, summary, sup,
+table, tbody, td, tfoot, th, thead, time, title, tr, track, tt,
+u, ul {
+  cursor: inherit;
+}
+
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
+html { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; font-size: 100%; }
+
+/* Lists */
+ol, ul { padding-left: 25px; list-style-image: none; }
+
+/* Quotes and Citations */
+blockquote, q { quotes: none; }
+blockquote:before, blockquote:after, q:before, q:after { content: ''; content: none; }
+
+/* Tables */
+table { border-collapse: collapse; border-spacing: 0; }
+td { vertical-align: top; }
+
+/* HTML5 Elements */
+article, aside, details, figcaption, figure, footer, header, hgroup, nav, section { display: block; }
+audio, canvas, video { *zoom: 1; display: inline-block; *display: inline; }
+audio:not([controls]) { display: none; }
+[hidden] { display: none; }
+
+/* Link Settings */
+a { cursor: pointer; }
+a:focus { outline: thin dotted; }
+
+/* Formatted Text */
+b, strong { font-weight: bold; }
+dfn, i { font-style: italic; }
+del { text-decoration: line-through; }
+mark { font-style: italic; font-weight: bold; }
+small { font-size: 85%; }
+sub, sup { position: relative; vertical-align: baseline; font-size: 75%; line-height: 0; }
+sup { top: -0.5em; }
+sub { bottom: -0.25em; }
+
+/* Preformatted Text */
+pre, code, kbd, samp { font-family: monospace, monospace; _font-family: 'courier new', monospace; font-size: 1em; }
+pre { word-wrap: break-word; white-space: pre; white-space: pre-wrap; }
+
+/* Random Elements */
+hr { display: block;}
+img { -ms-interpolation-mode: bicubic; vertical-align: middle; }
+svg:not(:root) { overflow: hidden; }
+
+/* Form Elements */
+label { cursor: pointer; }
+button, input, select, textarea { vertical-align: baseline; *vertical-align: middle; }
+button, input { line-height: 1.5em; }
+table button, table input { *overflow: auto; }
+button, input[type="button"], input[type="reset"], input[type="submit"] { -webkit-appearance: button; cursor: pointer; }
+input[type="checkbox"], input[type="radio"] { box-sizing: border-box; }
+input[type="search"] { -webkit-appearance: textfield; -moz-box-sizing: content-box; -webkit-box-sizing: content-box; box-sizing: content-box; }
+input[type="search"]::-webkit-search-decoration { -webkit-appearance: none; }
+button::-moz-focus-inner, input::-moz-focus-inner { border: 0; padding: 0; }
+textarea { vertical-align: top; overflow: auto; resize: vertical; }
+
+
+/* Helpers */
+
+.margin-top-20 {
+	margin-top: 20px;
+}
+
+/* Elements */
+
+html {
+  position: absolute;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  color: #000;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5em;
+}
+
+input {
+    display: block;
+    transition: background-color 100ms linear;
+    border: 1px solid #dadada;
+    border-radius: 3px;
+    background: #eaeaea;
+    padding: 0 15px;
+    width: 140px;
+    height: 40px;
+    font-size: 14px;
+    line-height: 40px;
+}
+
+input:focus {
+    background: #fafafa;
+}
+
+label {
+    font-size: 13px;
+}
+
+.input-row {
+    margin-bottom: 20px;
+}
+
+button {
+    transition: background-color 100ms linear;
+    cursor: pointer;
+    border-radius: 4px;
+    background: #23D923;
+    padding: 0 20px;
+    height: 40px;
+    color: white;
+    font-size: 13px;
+    line-height: 40px;
+}
+
+button.full {
+	width: 100%;
+}
+
+button:hover {
+    background: #e94343;
+}
+
+button:active {
+    background: #a91313;
+}
+
+h1 {
+    transition: color 200ms linear;
+    margin-bottom: 60px;
+    color: #aaa;
+    font-size: 60px
+}
+
+/* Authentication */
+
+.authentication {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    flex: 2;
+}
+
+.authentication > div {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.login-error {
+    position: absolute;
+    font-size: 14px;
+}
+
+.login-error.fresh {
+    color: red;
+}
+
+.login-error.stale {
+    color: black;
+}
+
+.sign-up {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.signed-up > div {
+  line-height: 60px;
+}
+
+
+.authentication > div:hover h1 {
+    color: #333;
+}
+
+/* Password Setup */
+
+div.app-body.account-setup {
+	justify-content: center;
+	align-items: center;
+}
+
+/* Messaging */
+
+div.app {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+nav.app {
+	display: flex;
+	width: 100%;
+	height: 80px;
+	border-bottom: 1px solid #eee;
+	flex-shrink: 0;
+}
+
+nav.app .logo {
+	font-size: 30px;
+	font-weight: 600;
+	height: 80px;
+	line-height: 80px;
+	padding: 0 30px;
+}
+
+nav.app .logo img {
+	height: 40px;
+	margin-right: 20px;
+}
+
+nav.app .sign-out {
+	height: 80px;
+	line-height: 80px;
+	padding-right: 30px;
+}
+
+div.app-body {
+	display: flex;
+	flex-basis: 0;
+	flex-grow: 1;
+	min-height: 0;
+}
+
+nav.channels {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 30px 30px 0 30px;
+	border-right: 1px solid #eee;
+}
+
+nav.channels .channels-title {
+	font-size: 24px;
+	font-weight: 600;
+	margin-bottom: 30px;
+}
+
+nav.channels ul {
+	flex: 2;
+	overflow-y: auto;
+	list-style: none;
+	padding-left: 0;
+}
+
+nav.channels ul li {
+	margin-bottom: 15px;
+	display: block;
+}
+
+nav.channels ul li button {
+	width: 100%;
+	text-align: left;
+	background: #333;
+}
+
+.conversation {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	flex: 2;
+}
+
+.conversation .app-message {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100%;
+	width: 100%;
+	color: #aaa;
+}
+
+.messages {
+	flex: 2;
+	overflow-y: auto;
+	padding: 40px 30px 20px 30px;
+}
+
+.message {
+	margin-bottom: 20px;
+}
+
+.message .user-name {
+
+}
+
+.message .body {
+	display: inline-block;
+	background: #E3E8F2;
+	border-radius: 10px;
+	padding: 20px 30px;
+	font-weight: 600;
+}
+
+.message-input-box {
+	display: flex;
+	border-top: 1px solid #eee;
+	height: 61px;
+}
+
+.message-input-box input {
+	background: none;
+	border: none;
+	height: 30px;
+	line-height: 30px;
+	margin: 15px 30px;
+	padding: 0;
+}
+
+.message-input-box button {
+	border-radius: 100px;
+	margin: 15px;
+	height: 30px;
+	line-height: 30px;
+}

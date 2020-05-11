@@ -1,0 +1,108 @@
+cabal-version: 2.2
+name: frontend
+version: 0.1
+build-type: Simple
+
+common common
+  default-extensions:
+    AllowAmbiguousTypes
+    BangPatterns
+    ConstraintKinds
+    DataKinds
+    DefaultSignatures
+    DeriveDataTypeable
+    DeriveFoldable
+    DeriveFunctor
+    DeriveGeneric
+    DeriveTraversable
+    EmptyCase
+    FlexibleContexts
+    FlexibleInstances
+    FunctionalDependencies
+    GADTs
+    GeneralizedNewtypeDeriving
+    InstanceSigs
+    KindSignatures
+    LambdaCase
+    MultiParamTypeClasses
+    OverloadedStrings
+    PolyKinds
+    QuasiQuotes
+    RankNTypes
+    RecursiveDo
+    ScopedTypeVariables
+    StandaloneDeriving
+    TemplateHaskell
+    TypeApplications
+    TypeFamilies
+    TypeOperators
+    PartialTypeSignatures
+  ghc-options:
+    -- Showing valid hole fits is too slow
+    -fno-show-valid-hole-fits
+    -- Missing fields in records is almost always a bug
+    -Werror=missing-fields
+    -Wall
+    -Wno-partial-type-signatures
+
+library
+  import: common
+  hs-source-dirs: src
+  build-depends: base
+               , aeson
+               , attoparsec
+               , beam-core
+               , bytestring
+               , categories
+               , common
+               , iv-common
+               , iv-frontend
+               , constraints
+               , constraints-extras
+               , containers
+               , dependent-map
+               , dependent-sum
+               , jsaddle
+               , lens
+               , monoidal-containers
+               , mtl
+               , network-uri
+               , obelisk-aeson-orphans
+               , obelisk-executable-config-lookup
+               , obelisk-frontend
+               , obelisk-generated-static
+               , obelisk-route
+               , reflex
+               , reflex-dom
+               , semialign
+               , text
+               , these
+               , these-lens
+               , time
+               , vessel
+               , witherable
+               , ghcjs-dom
+               , reflex-todomvc
+               , hscolour
+               , raw-strings-qq
+  exposed-modules:
+    Frontend
+    -- Obelisk.View.Widget
+    -- Obelisk.Auth.Frontend
+  ghc-options: -Wall
+
+executable frontend
+  import: common
+  main-is: main.hs
+  hs-source-dirs: src-bin
+  build-depends: base
+               , common
+               , frontend
+               , obelisk-frontend
+               , obelisk-generated-static
+               , obelisk-route
+               , reflex-dom
+  --TODO: Make these ghc-options optional
+  ghc-options: -threaded
+  if os(darwin)
+     ghc-options: -dynamic
