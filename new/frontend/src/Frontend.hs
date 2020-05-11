@@ -76,6 +76,7 @@ import GHCJS.DOM.XMLHttpRequest
 import Language.Javascript.JSaddle
 import Control.Monad.Ref
 import Data.IORef
+import Obelisk.Generated.Static
 
 --TODO: Does Aeson still break down on Maybe (Maybe a)?
 
@@ -90,6 +91,7 @@ headWidget = do
   let meta attrs = elAttr "meta" attrs $ return ()
       metaNameContent n c = meta ("name" =: n <> "content" =: c)
       stylesheet url = elAttr "link" ("href" =: url <> "rel" =: "stylesheet" <> "type" =: "text/css") $ return ()
+  elAttr "script" ("src" =: static @"js/impress.js") blank
   meta ("charset" =: "utf-8")
   metaNameContent "viewport" "width=1024"
   metaNameContent "apple-mobile-web-app-capable" "yes"
