@@ -79,7 +79,7 @@ import Data.IORef
 
 --TODO: Does Aeson still break down on Maybe (Maybe a)?
 
-frontend :: Frontend (R (FullRoute BackendRoute FrontendRoute))
+frontend :: Frontend (R FrontendRoute)
 frontend = Frontend
   { _frontend_head = headWidget
   , _frontend_body = bodyWidget ""
@@ -457,7 +457,7 @@ reflexTypes = Map.fromList [ ("constDyn", "a -> Dynamic t a")
 withReflexTypes = Map.union reflexTypes
 
 twitterSlides
-  :: forall (t :: *) (m :: * -> *)
+  :: forall (t :: *) (m :: * -> *) js
   .  ( Ref m ~ IORef
      , Ref (Performable m) ~ IORef
      , Monad m
@@ -466,6 +466,8 @@ twitterSlides
      , MonadHold t m
      , MonadFix m
      , TriggerEvent t m
+     , Prerender js t m
+     , PerformEvent t m
      )
   => Text
   -> SlideConfig
@@ -677,9 +679,10 @@ twitterSlides rootURL cfg = do
          dynText =<< mapDyn (maybe "" tweetStatus) latestTweet
      |] twitterSlideTypes
     do newTweet <- tweetWidget creds
-       let tweetReq = fmapMaybe (uncurry toTweetReq) $ attachDyn creds newTweet
-       tweeted <- pure never --TODO: performRequestAsync tweetReq
-       latestTweet <- holdDyn Nothing $ fmap decodeXhrResponse tweeted
+       -- let tweetReq = fmapMaybe (uncurry toTweetReq) $ attachDyn creds newTweet
+       -- tweeted <- performRequestAsync tweetReq
+       -- latestTweet <- holdDyn Nothing $ fmap decodeXhrResponse tweeted
+       let latestTweet = pure Nothing --TODO
        text "Last status: "
        dynText =<< mapDyn (maybe "" tweetStatus) latestTweet
        return ()
@@ -694,9 +697,10 @@ twitterSlides rootURL cfg = do
            text ": "
            dynText =<< mapDyn tweetStatus t
      |] twitterSlideTypes
-    do _ <- liveTweetWidget creds
-       tweetStream <- startStream $ fmapMaybe id $ updated creds
-       tweets <- foldDyn (:) [] tweetStream
+    do -- _ <- liveTweetWidget creds
+       -- tweetStream <- startStream $ fmapMaybe id $ updated creds
+       -- tweets <- foldDyn (:) [] tweetStream
+       let tweets = pure [] --TODO
        divClass "stream" $ simpleList tweets $ \t -> el "div" $ do
          el "strong" $ dynText =<< mapDyn tweetUserName t
          text ": "
@@ -712,7 +716,7 @@ twitterSlides rootURL cfg = do
              el "strong" $ dynText =<< mapDyn tweetUserName t
              el "p" $ dynText =<< mapDyn tweetStatus t
       |] twitterSlideTypes
-    do _ <- liveTweetWidget creds
+    do -- _ <- liveTweetWidget creds --TODO
        divClass "stream" $ elClass "ul" "fa-ul" $ do
          el "h1" $ dynText =<< mapDyn userNameFromCreds creds
          simpleList tweets $ \t -> el "li" $ do
@@ -735,8 +739,8 @@ userNameFromCreds c = case join $ fmap (lookup (encodeUtf8 $ T.pack "screen_name
                             Just c' -> "@" <> (decodeUtf8 c')
 
 
-tweetUserName = userName . statusUser
-tweetStatus = statusText
+tweetUserName = const "tweetUserName" --TODO: userName . statusUser
+tweetStatus = const "tweetStatus" --TODO: statusText
 
 toTweetReq :: Maybe Credential -> Text -> Maybe (XhrRequest Text)
 toTweetReq mc s = case mc of
