@@ -91,7 +91,7 @@ headWidget = do
   let meta attrs = elAttr "meta" attrs $ return ()
       metaNameContent n c = meta ("name" =: n <> "content" =: c)
       stylesheet url = elAttr "link" ("href" =: url <> "rel" =: "stylesheet" <> "type" =: "text/css") $ return ()
-  elAttr "script" ("src" =: static @"js/impress.js") blank
+  elAttr "script" ("src" =: static @"js/impress.js" <> "defer" =: "defer") blank
   meta ("charset" =: "utf-8")
   metaNameContent "viewport" "width=1024"
   metaNameContent "apple-mobile-web-app-capable" "yes"
@@ -106,8 +106,8 @@ headWidget = do
   elAttr "link" ("href" =: "http://fonts.googleapis.com/css?family=Coustard:900" <> "rel" =: "stylesheet" <> "type" =: "text/css") $ return ()
   stylesheet "//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css"
   stylesheet "//cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css"
-  stylesheet "css/hscolour-default.css"
-  stylesheet "css/css.css"
+  stylesheet $ static @"css/hscolour-default.css"
+  stylesheet $ static @"css/css.css"
   -- <link rel="shortcut icon" href="favicon.png" />
   -- <link rel="apple-touch-icon" href="apple-touch-icon.png" />
 
@@ -854,7 +854,7 @@ logo k = elAttr "span" ("class" =: ("logo " <> k)) $ withPunct "OBSIDIAN" "." "S
 
 withPunct :: _ => Text -> Text -> Text -> m ()
 withPunct a p b = do
-  text $ T.take 1 a
+  text $ T.take (T.length a - 1) a
   elAttr "span" ("class" =: "") $ text $ T.takeEnd 1 a
   elAttr "span" ("class" =: "punctuation") $ text p
   text b
