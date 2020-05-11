@@ -1,4 +1,7 @@
-{-# LANGUAGE ForeignFunctionInterface, JavaScriptFFI, CPP, TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module Reflex.ImpressJs where
 
@@ -12,14 +15,11 @@ import Data.Monoid
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Control.Lens
+import Data.Text (Text)
+import qualified Data.Text as T
+import Language.Javascript.JSaddle
 
-#ifdef __GHCJS__
-#define JS(name, js, type) foreign import javascript unsafe js name :: type
-#else
-#define JS(name, js, type) name :: type ; name = undefined
-#endif
-
-JS(impressInit_, "impress().init()", IO ())
+-- JS(impressInit_, "impress().init()", IO ())
 
 data SlideConfig
    = SlideConfig { _x :: Int
@@ -34,28 +34,29 @@ data SlideConfig
 instance Default SlideConfig where
   def = SlideConfig 0 0 0 1 0 0 0
 
-slideConfigToAttrs :: SlideConfig -> Map String String
+slideConfigToAttrs :: SlideConfig -> Map Text Text
 slideConfigToAttrs (SlideConfig x y z scale rx ry rz) =
-  Map.fromList [ ("data-x", show x)
-               , ("data-y", show y)
-               , ("data-z", show z)
-               , ("data-scale", show scale)
-               , ("data-rotate-x", show rx)
-               , ("data-rotate-y", show ry)
-               , ("data-rotate-z", show rz)
+  Map.fromList [ ("data-x", T.pack $ show x)
+               , ("data-y", T.pack $ show y)
+               , ("data-z", T.pack $ show z)
+               , ("data-scale", T.pack $ show scale)
+               , ("data-rotate-x", T.pack $ show rx)
+               , ("data-rotate-y", T.pack $ show ry)
+               , ("data-rotate-z", T.pack $ show rz)
                ]
-                                            
-slide :: MonadWidget t m => Maybe String -> String -> SlideConfig -> m a -> m a
+
+slide :: DomBuilder t m => Maybe Text -> Text -> SlideConfig -> m a -> m a
 slide sid klass config content = elAttr "div" (maybe Map.empty ("id" =:) sid <> "class" =: ("step " <> klass) <> slideConfigToAttrs config) content
- 
-impressDiv :: MonadWidget t m => m a -> m a
+
+impressDiv :: _ => m a -> m a
 impressDiv slides = elAttr "div" ("id" =: "impress" <> "data-width" =: "2048" <> "data-height" =: "1536") $ do
   s <- slides
-  post <- getPostBuild
-  performEvent_ $ fmap (const $ liftIO impressInit_) post
+  prerender_ blank $ do
+    _ <- liftJSM $ global ^. js0 ("impress"::Text) ^. js0 ("init"::Text)
+    pure ()
   return s
 
-fallback :: MonadWidget t m => m a -> m a
+fallback :: _ => m a -> m a
 fallback c = divClass "fallback-message" c
 
 makeLenses ''SlideConfig

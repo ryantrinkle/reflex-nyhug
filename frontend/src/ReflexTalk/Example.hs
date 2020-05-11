@@ -1,4 +1,5 @@
-{-# LANGUAGE TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE QuasiQuotes #-}
 module ReflexTalk.Example where
 
 import Language.Haskell.TH.Syntax
@@ -11,6 +12,7 @@ import Data.List.Split
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Data.Monoid
+import qualified Data.Text as T
 
 import Reflex
 import Reflex.Dom
@@ -37,12 +39,12 @@ example' s ts = [| do
   |]
   where ts' = Map.toList ts
 
-examplePre :: MonadWidget t m => String -> Map String String -> m ()
-examplePre s types = 
+examplePre :: _ => String -> Map String String -> m ()
+examplePre s types = prerender_ blank $
   divClass "example" $ do
-    elDynHtmlAttr' "div" ("class" =: "code") $ constDyn coloured
+    elDynHtmlAttr' "div" ("class" =: "code") $ constDyn $ T.pack coloured
     el "hr" $ return ()
-  where coloured' = hscolour True (trimLeading s)
+  where coloured' = hscolour True 0 (trimLeading s)
         coloured = foldl' (\html (token, typ) -> replace (">" <> token <> "<") ("title=\"" <> token <> " :: " <> typ <> "\">" <> token <> "<") html) coloured' (Map.toList types)
 
 replace old new = intercalate new . splitOn old
