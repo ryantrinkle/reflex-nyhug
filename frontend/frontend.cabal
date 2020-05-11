@@ -80,10 +80,17 @@ library
                , reflex-todomvc
                , hscolour
                , raw-strings-qq
+               , data-default
+               , template-haskell
+               , haskell-src-meta
+               , split
+               , safe
+               , http-types
+               , ref-tf
   exposed-modules:
     Frontend
-    -- Obelisk.View.Widget
-    -- Obelisk.Auth.Frontend
+    Reflex.ImpressJs
+    ReflexTalk.Example
   ghc-options: -Wall
 
 executable frontend

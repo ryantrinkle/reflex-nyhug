@@ -1,11 +1,9 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
 
 module Frontend where
-
-import qualified GHCJS.DOM.Element as JS
-import qualified Language.Javascript.JSaddle as JS
 
 import qualified Data.Text as T
 import Obelisk.Frontend
@@ -13,67 +11,30 @@ import Obelisk.Route
 
 import Reflex.Dom.Core hiding (button, Window, fromJSString)
 
-import Common.Api
 import Common.Route
 
-import Control.Applicative
-import Control.Lens (_Left, _Right, (^?))
 import Control.Monad
 import Control.Monad.Reader
-import Data.Aeson (ToJSON (..), FromJSON (..))
-import qualified Data.Aeson as Aeson
-import Data.Bifunctor
-import Data.ByteString (ByteString)
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
 import qualified Data.Map as Map
-import Data.Semigroup (First(..))
 import Data.Text (Text)
-import Data.Tuple (swap)
-import Data.Void (Void, absurd)
-import Data.These
-import Data.GADT.Compare
-import Data.Dependent.Sum (DSum)
-import qualified Data.Dependent.Map as DMap
-import Data.These.Lens
-import GHC.Generics ((:*:)(..))
 
 import ReflexTalk.Example
 
-import Reflex
 import Reflex.ImpressJs
-import Reflex.TodoMVC
 import Control.Concurrent
-import Control.Monad
-import Control.Monad.IO.Class
 import Data.Bitraversable
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as LBS
 import Data.Char
-import Data.Default
-import Data.Monoid
-import Data.Function
 import Data.Maybe
-import qualified Data.Map as Map
-import Data.Map (Map)
-import GHCJS.Foreign
-import GHCJS.Types
 import Safe
-import Language.Haskell.HsColour.InlineCSS
-import Language.Haskell.HsColour.Colourise
 import Text.RawString.QQ
-import qualified Data.Text as T
 import Data.Text.Encoding
 import Network.URI
 import Network.HTTP.Types.URI
-import Data.Aeson (decode)
 -- import Web.Twitter.Types hiding (Event)
 import Control.Lens hiding ((&))
-import GHCJS.DOM.HTMLElement
-import GHCJS.DOM.HTMLIFrameElement
 import GHCJS.DOM.Types hiding (Event, Text)
-import GHCJS.DOM.XMLHttpRequest
-import Language.Javascript.JSaddle
 import Control.Monad.Ref
 import Data.IORef
 import Obelisk.Generated.Static
@@ -127,8 +88,8 @@ bodyWidget rootURL = do
 --TODO: Disallow bad inputs
 integerInput :: _ => m (Dynamic t Integer)
 integerInput = do
-  x <- inputElement def
-  mapDyn (fromMaybe 0 . readMay . T.unpack) $ value x
+  i <- inputElement def
+  mapDyn (fromMaybe 0 . readMay . T.unpack) $ value i
 
 --TODO: Tab key should only move between controls on the *current* slide
 
@@ -137,7 +98,7 @@ buttonWithIcon i t = do
   (e, _) <- el' "button" $ do
     icon i
     text $ " " <> t
-  return $ _el_clicked e
+  return $ domEvent Click e
 
 slideWidth :: Int
 slideWidth = 2500
@@ -161,7 +122,7 @@ slides rootURL = do
   nextStepsSlides $ def & y +~ slideHeight * 6
   return (creds, tweets)
 
-introSlides :: forall t m. _ => SlideConfig -> m ()
+introSlides :: forall m. _ => SlideConfig -> m ()
 introSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "Reflex"
@@ -238,7 +199,7 @@ introSlides cfg = do
 
 -- htmlElementCreateShadowRoot (HTMLElement e) = fmap HTMLElement $ e ^. js0 "createShadowRoot"
 
-reflexDemoSlides :: forall t m. _ => SlideConfig -> m ()
+reflexDemoSlides :: forall m. _ => SlideConfig -> m ()
 reflexDemoSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "Made with Reflex"
@@ -284,7 +245,7 @@ reflexDemoSlides cfg = do
     el "h4" $ text "Built with Reflex.Dom, impress.js, and Snap"
     elAttr "div" ("style" =: "width:0;height:1050px") $ return ()
 
-breakSlide :: forall t m. _ => SlideConfig -> m ()
+breakSlide :: forall m. _ => SlideConfig -> m ()
 breakSlide cfg = slide Nothing "" cfg $ do
   el "h1" $ text "Try it out!"
   elAttr "pre" ("style" =: "font-size:larger") $ text $ T.pack $ trimLeading [r|
@@ -293,7 +254,7 @@ breakSlide cfg = slide Nothing "" cfg $ do
       ./try-reflex
     |]
 
-frpRequirementsSlides :: forall t m. _ => SlideConfig -> m ()
+frpRequirementsSlides :: forall m. _ => SlideConfig -> m ()
 frpRequirementsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h3" $ do
@@ -358,7 +319,7 @@ frpRequirementsSlides cfg = do
       el "strong" $ text "all"
       text " datastructures, even external callbacks"
 
-reflexSemanticsSlides :: forall t m. _ => SlideConfig -> m ()
+reflexSemanticsSlides :: forall m. _ => SlideConfig -> m ()
 reflexSemanticsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "Types"
@@ -407,7 +368,7 @@ reflexSemanticsSlides cfg = do
       instance MonadHold t (PushM t)
     |] mempty
 
-nextStepsSlides :: forall t m. _ => SlideConfig -> m ()
+nextStepsSlides :: forall m. _ => SlideConfig -> m ()
 nextStepsSlides cfg = do
   slide Nothing "" (cfg & x +~ slideWidth * 0) $ do
     el "h1" $ text "The Future of Reflex"

@@ -6,12 +6,8 @@
 module Reflex.ImpressJs where
 
 import Prelude hiding (head)
-import Reflex
 import Reflex.Dom
-import Control.Monad
-import Control.Monad.IO.Class
 import Data.Default
-import Data.Monoid
 import qualified Data.Map as Map
 import Data.Map (Map)
 import Control.Lens
